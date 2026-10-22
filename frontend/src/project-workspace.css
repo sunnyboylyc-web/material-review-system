@@ -1,0 +1,71 @@
+/* Project satellites and independent business pages, architecture revision 02. */
+.project-universe.cosmic-workspace{min-height:820px;height:calc(100vh - 106px);max-height:1120px}
+.project-universe .cosmic-heading{top:45px;left:5%;z-index:4;pointer-events:none}
+.project-universe .cosmic-heading h1{font-size:46px;line-height:1.5;margin:20px 0 14px}
+.project-universe .hero-subtitle{font-size:11px;letter-spacing:1px}
+.project-universe .cosmic-controls{top:45px;right:5%}
+.project-universe .cosmic-center{top:59%;width:min(80vw,1100px)}
+.project-universe .core-caption{bottom:13%;gap:10px}
+.project-universe .core-caption small{font-size:10px;color:#929ab1;letter-spacing:1px}
+.project-orbits{position:absolute;inset:235px 0 125px;z-index:3}
+.project-orbit-lines{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:#9e8f6833;stroke-width:.7;pointer-events:none}
+.project-satellite{position:absolute;left:var(--satellite-x);top:var(--satellite-y);width:238px;transform:translate(-50%,-50%);border:0;padding:0;background:transparent;display:grid;justify-items:center;cursor:pointer;text-align:left;color:var(--sc-text)}
+.project-satellite .satellite-glyph{display:block;width:260px;max-width:115%;height:180px;filter:drop-shadow(0 9px 17px #0009);transition:transform .28s,filter .28s}
+.project-satellite:hover .satellite-glyph,.project-satellite:focus-visible .satellite-glyph{transform:translateY(-7px) rotate(-3deg);filter:drop-shadow(0 4px 20px #bdcafa33)}
+.satellite-label{width:220px;display:grid;gap:12px;padding:16px 18px 14px;background:linear-gradient(120deg,#14182be8,#0b0e19d9);border:1px solid #3c4057;border-radius:11px;box-shadow:0 12px 28px #0002}
+.project-satellite:hover .satellite-label{border-color:var(--satellite-accent)}
+.satellite-meta{display:flex;align-items:center;gap:10px;font:9px Consolas,"Microsoft YaHei",monospace;letter-spacing:1.8px;color:var(--satellite-accent)}
+.satellite-meta i{width:3px;height:3px;background:currentColor;border-radius:50%;opacity:.65}
+.satellite-label strong{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:18px;font-weight:500;overflow-wrap:anywhere}
+.satellite-label strong svg{color:var(--satellite-accent);flex:none}
+.satellite-label>small{font-size:9px;color:#96a0b9;display:flex;justify-content:space-between;gap:10px}
+.satellite-label>small span{font:7px Consolas,monospace;letter-spacing:.5px;opacity:.65}
+.project-universe.has-many-projects{min-height:1080px;max-height:none}
+.has-many-projects .project-orbits{inset:310px 0 155px}
+.has-many-projects .project-satellite{width:185px}
+.has-many-projects .satellite-glyph{width:200px;height:120px}
+.has-many-projects .satellite-label{width:180px;padding:12px 14px;gap:9px}
+.has-many-projects .satellite-label strong{font-size:15px}
+.satellite-empty{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:min(460px,90%);padding:30px;text-align:center;border:1px solid #454458;border-radius:15px;background:#101321e8}
+.satellite-empty>svg{color:var(--sc-gold)}.satellite-empty h2{font:24px "SimSun",serif}.satellite-empty p{color:var(--sc-muted);font-size:12px;line-height:1.8}.satellite-empty .gold-button{margin-top:10px}
+.operations-nav{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.neural-app .top-controls-layout{align-items:center}
+.neural-app .daily-actions{display:flex;align-items:center;gap:12px;margin-left:auto;flex:0 0 auto}
+.neural-app .daily-actions .primary-button{width:auto;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:9px;margin:0;padding:10px 18px}
+.neural-app .daily-actions .download-data-button{background:linear-gradient(115deg,#e7cfa0,#bda16d);border-color:#cfb77f}
+.download-dialog{width:min(930px,calc(100vw - 40px));max-height:calc(100dvh - 70px);margin:auto;padding:0;border:1px solid #4e4855;border-radius:20px;background:#0c101d;color:var(--sc-text);box-shadow:0 30px 100px #0009;overflow:auto}
+.download-dialog::backdrop{background:#030611bb;backdrop-filter:blur(8px)}
+.download-dialog-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:28px 32px 24px;border-bottom:1px solid #30364a;background:radial-gradient(ellipse at 0 0,#e0bc7016,transparent 65%)}
+.download-dialog-heading .overline{font-size:9px;margin-bottom:10px}.download-dialog-heading h2{font:28px "SimSun",serif;letter-spacing:2px;margin:0}.download-dialog-heading p:last-child{font-size:11px;color:#a4afc6;margin:13px 0 0}
+.download-dialog-heading .icon-button{flex:none}
+.neural-app .download-dialog .collected-export{border:0;margin:0;padding:26px 32px;background:transparent;box-shadow:none}
+.neural-app .download-dialog .collected-export>h3{font-size:17px;margin-top:0}
+.neural-app .download-dialog .collected-export>p{font-size:11px;line-height:1.85}
+.neural-app .download-dialog .collected-export form{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:18px;margin-bottom:8px;padding:20px}
+.neural-app .download-dialog .collected-export form :is(select,input){width:100%;min-width:0;font-size:12px}
+.neural-app .download-dialog .collected-export form button{min-height:42px}
+.neural-app .download-dialog .collected-export form button[type=submit]{grid-column:2}
+.download-preview-note{padding:10px 13px;border-left:2px solid #b59b6a;background:#b59b6a0a;color:#c0aa83!important}
+@media(min-width:1800px){.project-universe .cosmic-heading h1{font-size:58px}.project-universe .cosmic-center{width:1200px}.project-satellite{width:270px}.project-satellite .satellite-glyph{width:310px;height:210px}.satellite-label{width:244px}.project-orbits{inset:260px 0 150px}}
+@media(max-width:1100px){.project-universe .cosmic-heading h1{font-size:38px}.project-satellite{width:190px}.project-satellite .satellite-glyph{width:220px;height:150px}.satellite-label{width:185px;padding:14px}.satellite-label strong{font-size:16px}.satellite-label>small span{display:none}.has-many-projects .project-orbits{inset:310px 4% 130px}.has-many-projects .project-satellite{width:140px}.has-many-projects .satellite-glyph{width:165px;height:110px}.has-many-projects .satellite-label{width:140px}.has-many-projects .satellite-label strong{font-size:13px}}
+@media(max-width:900px){.project-universe.cosmic-workspace{min-height:790px;height:840px;max-height:none}.project-universe .cosmic-heading{top:28px}.project-universe .cosmic-controls{top:32px}.project-universe .cosmic-center{top:53%;width:850px;max-width:none}.project-universe .core-caption{bottom:12%}.project-universe .project-orbits{inset:230px 2% 150px}.project-universe.has-many-projects{height:auto;padding-bottom:80px;min-height:1200px}.has-many-projects .project-orbits{position:relative;inset:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:35px 10px;padding:310px 30px 20px}.has-many-projects .project-satellite{position:relative;top:auto;left:auto;transform:none;justify-self:center;width:100%}.has-many-projects .project-orbit-lines{display:none}.has-many-projects .cosmic-center{top:480px;opacity:.5}.has-many-projects .core-caption{display:none}.operations-nav{grid-template-columns:repeat(3,minmax(0,1fr))}.neural-app .daily-actions{margin-left:auto}}
+@media(max-width:540px){.project-universe.cosmic-workspace{height:auto;min-height:840px;padding-bottom:85px}.project-universe .cosmic-heading{top:25px;left:6%;right:6%}.project-universe .cosmic-heading h1{font-size:34px;margin:17px 0 14px}.project-universe .hero-subtitle{font-size:10px;line-height:1.8;max-width:290px}.project-universe .cosmic-controls{top:230px;right:6%}.project-universe .cosmic-controls>span{display:inline;font-size:9px}.project-universe .cosmic-center{top:415px;width:680px;opacity:.8}.project-universe .core-caption{display:none}.project-universe .project-orbits,.project-universe.has-many-projects .project-orbits{position:relative;inset:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:25px 12px;padding:440px 18px 20px}.project-universe .project-satellite,.has-many-projects .project-satellite{position:relative;top:auto;left:auto;transform:none;justify-self:center;width:100%;min-width:0}.project-universe .satellite-glyph{width:190px;height:132px;max-width:115%}.project-universe .satellite-label{width:100%;min-width:0;box-sizing:border-box;padding:13px;gap:10px}.project-universe .satellite-label strong{font-size:15px}.project-universe .satellite-label>small span{display:none}.project-universe .satellite-meta{font-size:8px;letter-spacing:1px}.project-orbit-lines{display:none}.project-universe .cosmic-foot{bottom:25px;left:6%;right:6%;gap:10px;font-size:7px}.project-universe.has-many-projects{min-height:840px}.project-universe .satellite-empty{position:relative;grid-column:1/-1;left:auto;top:auto;transform:none;width:100%;box-sizing:border-box}.neural-app .date-form--top{display:grid;grid-template-columns:1fr auto;align-items:start;gap:16px}.neural-app .date-form--top>label{grid-column:1/-1}.neural-app .date-form--top .top-limit{flex-direction:column;align-items:flex-start;gap:10px}.neural-app .daily-actions{min-width:128px;margin:0;grid-column:2}.neural-app .daily-actions .primary-button{font-size:11px;padding:10px 12px}.operations-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.download-dialog{width:calc(100vw - 24px);max-height:calc(100dvh - 30px);border-radius:14px}.download-dialog-heading{padding:23px 20px}.download-dialog-heading h2{font-size:24px}.neural-app .download-dialog .collected-export{padding:20px}.neural-app .download-dialog .collected-export form{grid-template-columns:1fr;padding:16px;gap:14px}.neural-app .download-dialog .collected-export form button[type=submit]{grid-column:auto}}
+@media(prefers-reduced-motion:reduce){.project-satellite .satellite-glyph{transition:none}.project-satellite:hover .satellite-glyph{transform:none}}
+
+/* Screenshot revision 02: aligned controls and normal-size result status lights. */
+.neural-app .top-controls-layout .date-form--top{align-items:center}
+.neural-app .top-controls-layout .date-form.date-form--top #top-date{height:42px;box-sizing:border-box}
+.neural-app .top-limit__control{height:42px;box-sizing:border-box}
+.neural-app .top-limit__control :is(button,select){height:100%;min-height:0}
+.neural-app .period-status-dot{visibility:visible;width:9px;height:9px;flex:0 0 9px;gap:0}
+.neural-app .period-status-dot::before{width:9px;height:9px;flex:0 0 9px}
+.neural-app .period-status-dot--loading{visibility:hidden}
+.neural-app .daily-actions .daily-status{margin:0 4px 0 0}
+.neural-app .period-toolbar>.primary-button{width:auto;min-height:42px;margin-left:0;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:10px 18px}
+@media(max-width:540px){
+  .neural-app .top-controls-layout .date-form.date-form--top{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+  .neural-app .top-controls-layout .date-form.date-form--top>label{width:100%;justify-content:space-between}
+  .neural-app .top-controls-layout .top-limit{flex-direction:row;justify-content:space-between;align-items:center;min-width:0;width:100%}
+  .neural-app .daily-actions{grid-column:1/-1;justify-content:flex-end;min-width:0;margin:0;gap:10px}
+  .neural-app .daily-actions .primary-button{min-width:0;flex:0 1 auto;font-size:12px;padding:10px 16px}
+}

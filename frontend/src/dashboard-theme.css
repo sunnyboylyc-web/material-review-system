@@ -1,0 +1,14 @@
+/* SC LAB theme entry; business styles remain in styles.css. */
+@import './neural-workspace.css';
+@import './project-workspace.css';
+
+@import "./natural-moons.css";
+
+/* Explicit attention wins over R05's neutral explanatory-copy selectors. */
+.neural-app.app-shell :is(.history-upload, .collected-export, .configuration-panel, .file-storage) :is(.upload-important, .export-attention, .configuration-attention, .file-storage__attention, [role="alert"]),
+.neural-app.app-shell .configuration-guide p,
+.neural-app.app-shell .configuration-panel > .module-note,
+.neural-app.app-shell .operations-panel .operations-warning {
+  color: var(--danger);
+}
+.neural-app.app-shell .history-upload fieldset :is(p, legend, label) { color: var(--danger); }

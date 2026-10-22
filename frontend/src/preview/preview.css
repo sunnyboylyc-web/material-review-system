@@ -1,0 +1,4 @@
+@import "../dashboard-theme.css";
+.preview-notice { display:flex; align-items:center; flex-wrap:wrap; gap:8px 16px; min-height:36px; padding:8px 24px; background:#e8f3f5; color:#245665; font-size:12px; font-weight:700; border-bottom:1px solid #cce1e5; }
+.preview-notice span { font-weight:400; }
+.preview-notice a { margin-left:auto; color:#245665; text-underline-offset:3px; }

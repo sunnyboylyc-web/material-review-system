@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0.0",
+  "contractId": "top-three-day-trend-v1",
+  "status": "BUSINESS_CONFIRMED_D042",
+  "scope": "Independent TOP material dashboard only; not period-review comparisons or seven-day trend analysis.",
+  "evidence": {
+    "workbook": "examples/示例品牌示例项目素材复盘表26年.xlsx",
+    "sha256": "58FAAA60F98B5001DF96404B25963CA93432A85DBC21C7597E407AC282328DC1",
+    "sheet": "昨日top素材近日数据变化",
+    "cells": ["H3", "I3", "J3"],
+    "decision": "docs/DECISIONS.md D-042",
+    "legacyFormula": "=_xlfn.IFS(H3>=500,\"明显上升\",(AND(AND(H3>=0,I3>=0),H3>=500)),\"明显上升\",(AND(AND(H3<=0,I3<=0),H3<I3)),\"阶梯下降\",(OR(H3<=0,I3<=0)),\"消耗波动\",(AND(H3>=0,I3>=0)),\"阶梯上升\")"
+  },
+  "input": {
+    "sourceField": "stat_cost_for_roi2",
+    "dates": ["T", "T-1", "T-2"],
+    "selectedDaySpend": "sum of eligible spend for one account/material at T",
+    "previousDaySpend": "sum of eligible spend for the same account/material at T-1",
+    "twoDaysAgoSpend": "sum of eligible spend for the same account/material at T-2",
+    "eligibility": "D-028 spend > 0; a COMPLETE day with no eligible material row has true spend 0",
+    "unknown": "A missing/incomplete account-day or unknown required field is null with UNKNOWN_INPUT, never fabricated zero",
+    "arithmetic": "Exact BigDecimal subtraction, without display rounding"
+  },
+  "derived": {"H": "selectedDaySpend - previousDaySpend", "I": "previousDaySpend - twoDaysAgoSpend"},
+  "orderedFirstMatchRules": [
+    {"when": "H >= 500", "label": "明显上升"},
+    {"when": "H >= 0 AND I >= 0 AND H >= 500", "label": "明显上升", "note": "Redundant legacy branch; retain in evidence, equivalent to first rule"},
+    {"when": "H <= 0 AND I <= 0 AND H < I", "label": "阶梯下降"},
+    {"when": "H <= 0 OR I <= 0", "label": "消耗波动"},
+    {"when": "H >= 0 AND I >= 0", "label": "阶梯上升"}
+  ],
+  "output": {
+    "status": {"VALID": "All three operands are known and an ordered rule matched", "UNKNOWN_INPUT": "At least one required operand is unknown"},
+    "label": "Exactly the legacy Chinese label when VALID; null otherwise",
+    "lastGap": "H when VALID; null otherwise",
+    "previousGap": "I when VALID; null otherwise",
+    "coverage": "Provided independently by the caller; positive mathematical results do not certify evidence completeness"
+  },
+  "boundaryCases": [
+    "H=500 matches 明显上升 regardless of I",
+    "H=0 and I=0 matches 消耗波动, not a newly invented flat label",
+    "Equal negative gaps match 消耗波动 because the decline rule uses H<I, not H<=I"
+  ],
+  "acceptance": "Synthetic exact-boundary/branch-order tests and independent comparison on project-local verified evidence; no UI, database writes, collection or cloud operations"
+}

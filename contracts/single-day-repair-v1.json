@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "single-day-repair-1.0.0",
+  "scope": "Explicit local CLI import of exactly one configured account/day followed by an independent read-only verification; no collection, HTTP write, schema creation, migration, deletion or automatic rollback",
+  "entry": "cn.datadashboard.local.LocalFactRepairMain <private-config> <ISO-date> <SOURCE_READY-receipt> <receipt-SHA256> <expected-current-hash-or-MISSING> --apply",
+  "authorization": "An explicit invocation is required. SOURCE_READY alone never executes or authorizes a write. This development unit exercises writes only in an isolated synthetic local schema, not the existing historical fact schema.",
+  "preconditions": [
+    "All paths resolve inside this workspace's .local; the supplied receipt bytes match the supplied SHA256 and the selected date.",
+    "Every source and config evidence item still matches its recorded path, size and SHA256. Reprepare and validate the selected input without opening unrelated source dates.",
+    "Credentials are read only for execution, never printed or included in receipts. Loopback MySQL only; server datadir must resolve inside this workspace's .local; existing project tables and Flyway version/checksum must match. No CREATE or migration in the repair runner.",
+    "The selected account/day current hash must equal expected-current-hash-or-MISSING under the same transaction lock as import. A stale expectation rejects without publishing or adding fact versions.",
+    "Only the selected account/day can reach the existing versioned transactional store. Preserve canonical content deduplication and the two-version/third-isolated rule."
+  ],
+  "statuses": {
+    "CURRENT_VERIFIED": "Transaction returned a current version and a separate read-only connection independently matched source identity, pointers, all rows and content hash; imported or idempotent is recorded separately.",
+    "STORED_NOT_CURRENT": "A previous or isolated version was returned; not repaired/published success, even when idempotent.",
+    "COMMITTED_UNVERIFIED": "A returned transaction result is recorded but independent current verification or final source recheck failed. Never claim rollback or success; maintenance investigation required.",
+    "REJECTED": "A known precondition/transaction rejection; does not imply every possible database failure is proven rolled back.",
+    "EXECUTION_UNCERTAIN": "Transaction completion could not be established. Never automatically retry, claim rollback, or show success."
+  },
+  "receipt": {
+    "directory": ".local/repair-runs/<unique-run>/receipt.json",
+    "fields": ["schemaVersion", "statDate", "startedAt", "finishedAt", "status", "preflightEvidence", "sourceType", "contentHash", "rowCount", "expectedCurrent", "transactionOutcome", "inputVersionId", "disposition", "independentVerification", "errorCode"],
+    "rules": ["Unavailable counts, identifiers and outcomes are null, not 0 or success.", "Only fixed error codes; no SQL errors, credentials, raw facts or account IDs in console/receipt.", "Private receipt retains exact target schema/port and source/config/preflight evidence, not credentials. An interrupted RUNNING receipt is not success.", "Before-state expectation and previous version are retained for a separately reviewed rollback. No automatic deletion or pointer rollback in this unit."]
+  },
+  "operationsFeedback": "After CURRENT_VERIFIED, explicitly refresh the existing read-only operations day query and compare date/current content hash. The page displays live current state, not an inferred historical job result. No new unauthenticated write endpoint.",
+  "acceptance": [
+    "Isolated real MySQL: missing single day -> CURRENT_VERIFIED -> operations AVAILABLE/EMPTY with exact hash and count; other day/account data untouched.",
+    "Repeat same input is idempotent; second content retains prior; third is isolated and never green repair success; old previous content is not automatically promoted.",
+    "Stale preflight/source/config and stale current expectation refuse execution; malformed arguments and unknown dates cannot broaden to all dates.",
+    "Independent readback failure remains COMMITTED_UNVERIFIED; uncertain transaction outcome cannot be reported as rollback.",
+    "Existing real facts/source files remain unchanged; frontend/backend regression and local preview checks pass."
+  ],
+  "ownership": {
+    "local_source_preflight": "LocalFactRepairMain, focused repair unit tests, minimal package-private reuse hooks in LocalFactPreflightMain/LocalFactVerifyMain/LocalFactImportMain; do not modify existing importer semantics",
+    "current_fact_reader": "New isolated MySQL repair integration test and independent code review; no production source edits without coordination",
+    "dashboard_ui_binding": "Minimal frontend maintenance instructions and tests only; no API contract expansion or layout change",
+    "main": "Contract, integration orchestration, verification scripts if needed, docs and QA"
+  }
+}

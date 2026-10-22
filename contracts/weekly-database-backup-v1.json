@@ -1,0 +1,36 @@
+{
+  "contractVersion": "weekly-database-backup-v1",
+  "schedule": {"calendar": "Sun *-*-* 23:00:00 Asia/Shanghai", "persistentCatchup": false, "retainSuccessful": 1},
+  "database": "SCSJ_LOCAL_CLOUD",
+  "scope": "Entire stored business schema, including all retained project/account data and in-schema version/state records; not just enabled projects or last week's changes.",
+  "excluded": ["UI/program", "filesystem account/configuration/secrets", "original/normalized source evidence outside SQL", "systemd/nginx/MySQL host configuration", "other rescue or full-system backups"],
+  "worker": {
+    "unit": "scsj-database-backup.service",
+    "root": ".local/database-weekly-backup",
+    "sql": "generations/<lowercase-uuid32>/business.sql",
+    "current": "current.json",
+    "manifest": {"schemaVersion": 1, "generation": "lowercase UUID32", "database": "SCSJ_LOCAL_CLOUD", "createdAt": "UTC ISO instant ending Z", "bytes": "positive integer", "sha256": "lowercase SHA-256", "validation": "DUMP_EXIT_AND_HASH_READBACK", "restoreTested": false},
+    "lastAttempt": {"schemaVersion": 1, "status": "RUNNING|SUCCESS|FAILED", "startedAt": "UTC ISO instant", "completedAt": "UTC ISO instant or null", "errorCode": "fixed safe code or null"},
+    "atomicity": "Private dump exit/footer/fsync/streaming hash readback, then atomic current-pointer publish, then exact predecessor cleanup. Transient multiple files allowed. Failures never delete the current verified generation. Metadata is not a live process probe.",
+    "recovery": "Published but unfinished cleanup is journal-resumed before a fresh weekly backup. Pre-publication crash/unknown artifacts require operator review and block additional generations. No automatic SQL restore.",
+    "legacy": "At install, freeze exact five 2026-10-13..17 daily SQL/complete pairs by size/SHA. Only after a new weekly backup is published can unchanged approved predecessors be removed. Unknown/changed files are retained."
+  },
+  "http": {
+    "roles": ["OPERATIONS", "ADMIN through existing operations role"],
+    "localAnonymousMode": "Not registered",
+    "status": "GET /api/operations/database-backup; small metadata and file length only; available/latest/lastAttempt/schedule/retention; policy is not proof of enabled timer",
+    "download": "GET /api/operations/database-backup/download?generation=<displayed uuid32>; opened same handle hashed then streamed in 64KiB buffers; native browser download, no whole-file frontend blob",
+    "staleGeneration": 409,
+    "unavailable": 503,
+    "anonymous": 401,
+    "viewer": 403,
+    "writes": "No create/delete/run/restore route; protected automatic backup is not a user-uploaded file."
+  },
+  "limits": [
+    "Single-transaction logical dump requires all base tables InnoDB; read-only metadata check before dump.",
+    "Same-host backup does not protect against host/disk loss; operator must download to a separate location.",
+    "File hash checks are not a database restore rehearsal.",
+    "Single retention removes earlier weekly recovery points; data after latest snapshot may need to be recollected/reimported.",
+    "Legacy A UI remains compatible with the shared backend but does not gain B's new operations sections/backup card."
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0.0",
+  "contractId": "confirmed-metric-arithmetic-v1",
+  "status": "ENGINEERING_VERIFIED_CORE_ONLY",
+  "scope": "Only arithmetic on already-selected, same-population totals. This is not a complete dashboard business contract.",
+  "sources": [
+    "docs/METRIC_MAPPING_DRAFT.md sections 5.2, 6.1, 6.3 and 7",
+    "docs/DECISIONS.md D-028, D-029, D-031, D-036"
+  ],
+  "inputs": {
+    "spend": "sum(stat_cost_for_roi2)",
+    "impressions": "sum(live_show_count_for_roi2_v2)",
+    "clicks": "sum(live_watch_count_for_roi2_v2)",
+    "payGmv": "sum(total_pay_order_gmv_for_roi2)",
+    "orders": "sum(total_pay_order_count_for_roi2)"
+  },
+  "preconditions": [
+    "Caller selects one account, explicit closed date range and CURRENT evidence versions only.",
+    "Caller includes only spend > 0 material-day rows, per D-028.",
+    "Numerator and denominator use the same rows and date range. Never average source daily rates.",
+    "Unknown source fields are not converted to zero and cannot silently be omitted from a complete total.",
+    "Coverage metadata remains separate and mandatory at query integration. A computable partial value is not complete coverage."
+  ],
+  "metrics": [
+    {"id": "ctr", "formula": "clicks / impressions", "unit": "RATIO"},
+    {"id": "cvr", "formula": "orders / clicks", "unit": "RATIO"},
+    {"id": "roi", "formula": "payGmv / spend", "unit": "MULTIPLE"},
+    {"id": "cpc", "formula": "spend / clicks", "unit": "MONEY_PER_CLICK"},
+    {"id": "cpm", "formula": "1000 * spend / impressions", "unit": "MONEY_PER_THOUSAND_IMPRESSIONS"},
+    {"id": "comparisonIndex", "formula": "currentValue / previousValue", "unit": "RATIO", "example": "100 to 120 returns 1.2; display 120%, not +20%"},
+    {"id": "periodChange", "formula": "(currentSpend - previousSpend) / previousSpend", "unit": "RATIO", "example": "100 to 120 returns 0.2; display 20%"}
+  ],
+  "engineeringChoices": {
+    "decimalMath": "BigDecimal, exact multiplication/subtraction, MathContext.DECIMAL128 for division; no double and no early display rounding",
+    "valueStatus": {
+      "VALID": "Numeric value is available; zero numerator with positive denominator is real zero. Does not imply complete coverage.",
+      "UNKNOWN_INPUT": "A required operand is unknown; value is null. Null is allowed only with this explicit state, never as an ambiguous result.",
+      "ZERO_DENOMINATOR": "All operands are known but denominator is zero; value is null, not zero/Infinity/NaN."
+    },
+    "unavailableDisplay": "An em dash with the corresponding reason; no #DIV/0! or fabricated 0%",
+    "precedence": "UNKNOWN_INPUT before ZERO_DENOMINATOR if any operand is unknown"
+  },
+  "notAuthorizedByThisContract": [
+    "Selecting AIGC/ZZ populations or cohorts",
+    "Choosing annual/lifetime ROI periods, initial-date semantics or trend rules",
+    "Tie-breaking at the ranking cutoff",
+    "Database writes, APIs, UI changes, collectors, cloud deployment or public access"
+  ]
+}

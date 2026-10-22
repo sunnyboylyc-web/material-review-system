@@ -1,0 +1,49 @@
+{
+  "contractVersion": "project-configuration-v1",
+  "d115AuthenticatedActor": {
+    "actor": "Legacy LOCAL_UNAUTHENTICATED or AUTHENTICATED:<server-session username>; username matches [A-Za-z0-9_-]{1,40}.",
+    "source": "Only the authenticated trial controller supplies the session principal. Request body actor fields are rejected. Local callers preserve the legacy actor. Existing immutable revisions are not rewritten.",
+    "rollback": "Older binaries require the legacy actor literal; after cloud revisions exist, rollback requires an actor-aware binary or separately reviewed configuration recovery, never edits to immutable evidence."
+  },
+  "d102CategoryExtension": {
+    "field": "project.category: LARGE_APPLIANCE / SMALL_APPLIANCE / OTHER (大家电 / 小家电 / 其他)",
+    "compatibility": "Optional in legacy v1/v2 documents and requests; omission defaults to OTHER, explicit null/unknown values reject. New immutable revisions and HTTP responses include category. Category participates in candidate hash and independent readback.",
+    "singleSource": "Editable once in collection-account configuration; dashboard configuration and GET /api/projects derive from that same project metadata. No separately editable dashboard category.",
+    "identity": "Category is display grouping only, not a fact/account/import identity dimension; reclassification preserves project ID/account binding and historical facts. Collector template and metric configuration stay shared.",
+    "rollback": "Older binaries reject category as an unknown field; code rollback after category publication requires a compatible category-aware binary or a separately reviewed configuration rollback. Do not edit immutable revision files."
+  },
+  "d080Extension": {
+    "storageSchema": "project-configuration-v2 remains compatible with v1/v2 historical documents",
+    "projectFields": "optional publicDouyinId, awemeName, deleted (default false); HTTP GET emits null metadata and deleted:false, stored documents omit absent metadata and false deleted",
+    "pending": "Nonempty valid publicDouyinId permits empty douyinIds and null awemeName. No manual lookup gate or online check on save. Without publicDouyinId at least one legacy numeric anchor remains required.",
+    "delete": "Persisted deletion is deleted:true plus enabled:false, retains immutable id/account and historical configuration/facts. Restore sets deleted:false; existing rows cannot be physically removed. Unsaved drafts may be removed before submission.",
+    "directory": "Only enabled and non-deleted projects appear; account lookup remains bound to each project, no fallback to another account when facts are empty.",
+    "plan": "Enabled non-deleted public-ID projects emit publicDouyinId and douyinIds=[] regardless of stale cached anchors; collector resolves before report execution. Legacy no-public projects emit existing anchors. Offline plan does not execute lookup or reports."
+  },
+  "implementationUnit": {
+    "acceptance": "Local maintenance preflight and explicit apply publish one immutable configuration revision; sidebar and project-owned dry-run collector plan read that same revision. Restart preserves it; stale/invalid/cross-origin writes fail without publication; disabling retains facts.",
+    "scope": "Project/account additions, names, enable/disable and anchor configuration; fixed material-33-v1 metric profile is visible but not editable until versioned acquisition/input compatibility is verified.",
+    "excluded": ["MCP execution", "legacy directory writes", "database writes or migrations", "cloud", "second real-account acceptance", "metric additions/removals", "login system", "arbitrary dashboard editing"],
+    "owners": {"core": "current_fact_reader: backend configuration package and its tests", "ui": "dashboard_ui_binding: frontend only", "collector": "local_source_preflight: collector plan consumer and its tests after survey", "integration": "main: api/local wiring, contract, independent verification, documentation"}
+  },
+  "storage": {
+    "location": "Explicit private directory under workspace .local; no credentials in configuration",
+    "documents": "Immutable revisions/<sha256>.json; atomic current.json pointer; lock covers CAS and publication. Hash and byte size checked on every read. Old versions retained; no automatic cleanup.",
+    "document": {"schemaVersion": "project-configuration-v1", "createdAt": "UTC instant", "previousRevision": "prior SHA-256 or null for initialization", "actor": "LOCAL_UNAUTHENTICATED", "metricProfile": "material-33-v1", "projects": [{"id": "[a-z][a-z0-9-]{0,39}", "name": "display name 1..80", "advertiserId": "[1-9][0-9]{0,29}", "douyinIds": ["[1-9][0-9]{0,29}"], "enabled": true}]},
+    "rules": ["0..32 projects; unique ID and account; bounded 1..20 unique anchors per project", "Existing project ID and account binding immutable; existing projects cannot be removed, disable instead", "Same enabled flag drives sidebar and next collector plan", "No statement of online account/anchor ownership verification; configuration validation only"]
+  },
+  "http": {
+    "read": "GET /api/operations/configuration",
+    "snapshot": {"schemaVersion": "project-configuration-v1", "revision": "SHA-256", "writeEnabled": true, "collectorExecution": "DISABLED", "metricProfile": "material-33-v1", "metricChangesEnabled": false, "projects": "document projects"},
+    "preflight": "POST /api/operations/configuration/preflight; body {expectedRevision, projects}; response {status: READY, expectedRevision, candidateHash}",
+    "apply": "POST /api/operations/configuration/apply; body {expectedRevision, projects, candidateHash}; response {status: CURRENT_VERIFIED, revision, previousRevision, collectorExecution: DISABLED}",
+    "errors": "400 CONFIG_INVALID, 409 CONFIG_STALE, 403 CONFIG_WRITE_DISABLED or LOCAL_REQUEST_REQUIRED, 503 CONFIG_UNAVAILABLE. No raw exception/value/path leakage.",
+    "guard": "Default one-argument launch stays read-only. Explicit --configuration <private-dir> --allow-local-config-writes opts into writes, binding only 127.0.0.1:18080. Write requests require exact loopback Host and Origin (127.0.0.1 ports 5180/18080), JSON, X-SCSJ-Config-Write: 1; no CORS. No login, no public exposure.",
+    "ui": "Draft changes invalidate preflight; explicit check then save. After save independently GET active revision and refresh sidebar; unknown outcome requires reread, not automatic retry. Configuration panel remains reachable with zero enabled projects. No browser persistent storage of account configuration."
+  },
+  "collector": {
+    "consumer": "Read same active snapshot once per plan; project-owned CLI emits private dry-run plan with configuration revision and selected account/anchors/fixed profile; no old config writes, subprocess or network.",
+    "meaning": "CONFIGURATION_READY_NOT_EXECUTED only, not collection success. Existing collector integration remains pending."
+  },
+  "recovery": "Retain immutable prior revisions. Rollback by resubmitting prior projects against current revision through same preflight/apply; identity restrictions remain. No editing pointer by hand, no deletion."
+}

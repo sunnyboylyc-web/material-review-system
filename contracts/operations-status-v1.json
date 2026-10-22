@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "operations-status-1.2.0",
+  "d073CreationDiagnostics": "Canonical AIGC -2 has no applicable creation date and emits no creation anomaly. Ordinary source missing/conflicting/after-observation remains a raw-field observation, but affectedMetrics=[] because earliest source/business date resolves display/classification. Do not mislabel these as pending new/history or collector failure. Other missing metrics/days remain unchanged.",
+  "decisionReferences": ["D-065", "D-066", "D-073"],
+  "scope": "Local read-only project/day diagnosis; not collector execution or configuration mutation",
+  "endpoint": "GET /api/operations/projects/{projectId}/days?start=YYYY-MM-DD&end=YYYY-MM-DD",
+  "projectAllowlist": ["sampleproject"],
+  "range": { "inclusive": true, "maxDays": 366, "minYear": 1900, "maxYear": 2200 },
+  "response": {
+    "schemaVersion": "operations-status-1.2.0",
+    "projectId": "string",
+    "requestedAt": "ISO instant",
+    "range": { "start": "ISO date", "end": "ISO date" },
+    "validationScope": "CURRENT_DB_FACT_HASHES",
+    "sourceFilesRechecked": false,
+    "collectionStatus": "NOT_OBSERVED",
+    "observedRange": { "first": "ISO date or null", "last": "ISO date or null" },
+    "summary": { "queriedDays": "integer", "availableDays": "integer", "emptyDays": "integer", "missingDays": "integer", "isolatedDays": "integer" },
+    "missingDetails": [{"date":"ISO date","materialId":"canonical ID or null for missing account day","field":"accountDay|createdDate|spend|gmv|impressions|clicks|orders","reason":"NO_CURRENT_VERSION|FIELD_NOT_RECORDED|MISSING_CREATION_DATE|CONFLICTING_CREATION_DATE|CREATION_AFTER_OBSERVATION","affectedMetrics":"string[]; empty on explicit nonpositive-spend metric rows","sourceVersionId":"current day version ID or null for no current day"}],
+    "missingDetailTotal": "total matching detail rows before visible cap",
+    "missingDetailsTruncated": "true iff missingDetailTotal exceeds 1000; ask maintenance to narrow dates",
+    "days": [{
+      "date": "ISO date; ascending; exactly one row per requested date",
+      "state": "AVAILABLE | EMPTY | MISSING",
+      "currentVersion": {
+        "versionId": "positive integer",
+        "sourceType": "MCP_AUTO | MANUAL_HISTORY",
+        "contentHash": "lowercase SHA-256",
+        "rowCount": "nonnegative integer",
+        "updatedAt": "ISO instant; version record timestamp, not collector freshness"
+      },
+      "previousVersionId": "positive integer or null",
+      "isolatedVersionCount": "nonnegative integer"
+    }]
+  },
+  "rules": [
+    "currentVersion is null exactly when state is MISSING. EMPTY is a verified complete account day with zero fact rows, not missing.",
+    "availableDays includes EMPTY; missingDays + availableDays = queriedDays. isolatedDays counts days with one or more ISOLATED versions, independently of coverage.",
+    "Current facts and version metadata must be read in one read-only REPEATABLE_READ snapshot; identity, pointers, rows and hashes are checked before returning any success.",
+    "Only current fact payloads are rehashed; previous/isolated versions are metadata diagnostics, not independently payload-validated in this endpoint.",
+    "Missing current evidence does not establish collection failure or an overdue collection. observedRange describes stored facts, not scheduling obligations.",
+    "missingDetails covers source creation metadata and five dashboard base metrics only, not a general 33-field platform. Every requested fact missing one of these fields is observed; no numeric raw data included. Resolve creation conflicts using only history <= queried end. Null creation on one row is still a field observation even if another source row supplies a consistent date.",
+    "Field observations sorted date ascending, canonical material ID text ascending (null as empty), then field ascending. Return first 1000 and explicit total/truncation. Missing account day has NO_CURRENT_VERSION, not fabricated collector failure. Unknown/invalid source creation date is MISSING_CREATION_DATE; do not invent cause.",
+    "Affected metrics: ordinary raw createdDate anomalies have empty impact under D-073 earliest source/business-date resolution; AIGC creation is not applicable and not an anomaly. spend=>all; gmv=>roi; impressions=>ctr/cpm; clicks=>ctr/cvr/cpc; orders=>orders/cvr. For explicitly zero or negative spend rows, latter four do not enter current calculations and affectedMetrics is empty. Source version ID binds observation to current validated fact evidence.",
+    "No real account IDs, source filesystem paths, credentials, raw material rows or driver exception details are returned.",
+    "Missing dates and isolated inputs require maintenance attention; no automatic activation, import, collection, deletion or configuration writes. Green current coverage does not imply all historical metrics exist.",
+    "HTTP 400 INVALID_QUERY, 404 PROJECT_NOT_ENABLED, 503 OPERATIONS_QUERY_UNAVAILABLE; failures never masquerade as an empty success."
+  ],
+  "localPreflight": {
+    "entry": "cn.datadashboard.local.LocalFactPreflightMain <private import config path> <ISO date>",
+    "statuses": ["SOURCE_READY", "INPUT_REJECTED", "NO_CONFIGURED_INPUT"],
+    "boundary": "Revalidate one configured local source without any database connection. SOURCE_READY is not import success, current-version identity, or authorization to activate a changed version. NO_CONFIGURED_INPUT is not proof no archive exists.",
+    "receiptLocation": ".local/repair-preflight/<unique run>/preflight.json"
+  },
+  "acceptance": [
+    "Existing UI has a maintenance toggle and separate date query; switching does not change review/TOP query values or trigger collection.",
+    "Real local database shows complete manual and auto days, confirmed empty day, and dates outside stored coverage as missing with accurate semantics.",
+    "Synthetic tests cover isolated versions, mismatched identities/pointers/hashes, invalid range, failed and stale UI requests.",
+    "Single-day source preflight is exercised on real auto/manual/empty and unconfigured dates; source bytes and database facts remain unchanged."
+  ],
+  "ownership": {
+    "current_fact_reader": "backend query reader, new operations models/service, associated tests",
+    "dashboard_ui_binding": "frontend operations panel/types/adapter/tests and minimal App toggle",
+    "local_source_preflight": "new LocalFactPreflightMain and tests only",
+    "main": "contract, API/local wiring, independent integration, docs/QA"
+  }
+}

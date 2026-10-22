@@ -1,0 +1,13 @@
+{
+  "contractVersion": "anchor-resolution-v1",
+  "scope": "D080: configuration save requires no manual lookup. The collection executor resolves public IDs immediately before explicitly authorized report collection; legacy local lookup endpoint remains unused by the UI. No automatic scheduling or configuration writes.",
+  "endpoint": "POST /api/operations/configuration/resolve-anchor",
+  "request": {"advertiserId": "positive decimal string up to 30 digits", "publicDouyinId": "exact public ID [A-Za-z0-9_.-]{1,64}"},
+  "response": {"advertiserId": "requested advertiser", "publicDouyinId": "exact aweme_show_id", "awemeId": "provider internal aweme_id", "awemeName": "provider display name, not a user input"},
+  "guard": "Same loopback Host/Origin/remote, JSON and X-SCSJ-Config-Write: 1 guard as configuration writes, enabled only by explicit local maintenance launch.",
+  "transport": "Fixed HTTPS oceanengine MCP endpoint/tool qianchuan_uni_aweme_authorized_get_v1. SCSJ_MCP_CREDENTIALS selects an existing apiKey JSON under workspace .local; credentials read lazily only on click. No proxy/redirect, bounded body, timeout, sanitized errors, no payload logging.",
+  "matching": "marketing_goal LIVE_PROM_GOODS, scene CREATE, search_key_words exact public ID; consume all declared pages up to 100, 100 rows/page, stable totals and duplicate-ID checks. Exactly one aweme_show_id match required; no nickname/first-row/self fallback.",
+  "configuration": "D080 supersedes the D079 manual lookup gate. Optional publicDouyinId and awemeName persist in project-configuration-v2. Public-ID projects may save with douyinIds=[] and awemeName=null; no network lookup is required to preflight/apply. Collector plans carry publicDouyinId with empty douyinIds and resolve exact ownership immediately before authorized collection. Legacy projects without public ID retain existing numeric anchors. Existing source files are not rewritten on read.",
+  "errors": ["ANCHOR_INPUT_INVALID", "ANCHOR_NOT_FOUND", "ANCHOR_AMBIGUOUS", "ANCHOR_QUERY_REQUIRED", "ANCHOR_PAGE_INVALID", "ANCHOR_PROVIDER_REJECTED", "ANCHOR_PROTOCOL_INVALID", "ANCHOR_CONNECTION_UNAVAILABLE"],
+  "validation": "D080 offline synthetic tests cover pending saves, complete exact resolution, failures and report publication; verify_configuration_local.py checks packaged Java plans against Python. Actual provider permissions and current upstream response schema have not been verified online in this unit. Unrecognized/incomplete provider data fails closed."
+}

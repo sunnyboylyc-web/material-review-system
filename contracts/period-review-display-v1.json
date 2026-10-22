@@ -1,0 +1,49 @@
+{
+  "mappingVersion": "period-review-display-1.4.0",
+  "querySchemaVersion": "dashboard-query-1.7.0",
+  "d075CardsAndLimits": "Overall/new/historical cards bind each period group's spend, roi, materialCount, cpm, cpc, ctr and cvr directly; each comparison binds Review.comparisons for the same group/key, current divided by previous (not change rate). Count comes from materialCount, never visible row length. New/historical drilldowns default to 10 each, independently adjustable 1..200 with 10/20/30/40/50 shortcuts. Client slicing must not change full-cohort summaries or the fixed overall TOP10. Numeric unknown/zero-denominator and partial semantics remain unchanged.",
+  "d074PeriodCpc": "Homepage period CPC binds overall metrics.cpc; all new/historical/aigc and comparisons also carry the same metric. Matched spend/click rows, partial/unknown/zero semantics follow dashboard-query-1.7.0 d074PeriodCpc mapping; no date/classification changes.",
+  "d073Composition": "Ordinary new/history use earliest source creation or business statDate <=anchor. AIGC canonical ID -2 is its own aigc group, present in overall and all rankings. Spend/count proportions use new/history/aigc each divided by overall; pending remainder subtracts all three, not just new/history. Do not force ordinary-only normalization or label AIGC as pending.",
+  "d069ChartReplacement": "Two separate new/historical TOP10 charts are superseded by one overall current-period TOP10 paired non-stacked chart. Read Review.topMaterials first 10, including pending cohorts; prior spend is same material ID. The two cohort datasets remain for new/historical card drilldown, not overall-chart filtering. topMaterials now includes ctr/cvr/cpm and full current-date dailySpend for click details.",
+  "supersedingDecision": "D-073 supersedes D-065 source-only creation: earliest source/business date for ordinary, AIGC independent and date NOT_APPLICABLE. Numeric matched-input/partial behavior unchanged.",
+  "scope": "Local read-only period homepage, overall TOP10 chart and cohort drilldown, preserving confirmed eligibility and arithmetic. D-069 supersedes the former two cohort charts, not the two cohort card drilldowns.",
+  "mappings": [
+    {
+      "source": "Current and previous Period.groups[].metrics.spend/roi",
+      "rule": "Keep each period independent and inclusive. Header comparison is current divided by previous, NOT percentage change. Ratio label must mean '为上期的'.",
+      "output": "Homepage overall spend/ROI and group comparison cards",
+      "evidence": "Existing DashboardCalculatorTest.eachPeriodClassifiesIndependentlyAndComparisonDiffersFromMaterialGrowth"
+    },
+    {
+      "source": "Each period's new/historical/aigc/overall materialCount NumericResult",
+      "rule": "Count share = group's count / same period overall count. Counts use spend>0 distinct IDs, same row-based ZZ exclusion; AIGC is one independent eligible ID. UNKNOWN propagates; zero overall gives ZERO_DENOMINATOR. Pending count share is remaining overall-new-historical-aigc qualified count / overall, not raw pendingMaterialCount. Never normalize just new/history to 100% or use detail-row length as materialCount.",
+      "output": "Homepage material-count proportion bars; pending remainder explicitly shown",
+      "evidence": "DashboardCalculatorTest.cohortDetailsPreservePendingAigcZzAndUnknownMetricSemantics plus frontend share tests"
+    },
+    {
+      "source": "Each period's new/historical/aigc spendShare and overall spend",
+      "rule": "Existing spendShare ratios use all eligible spend, including ZZ. Preserve unassigned pending remainder; no forced two-group normalization. Missing coverage is separate from computable partial sums.",
+      "output": "Homepage spend composition bars",
+      "evidence": "DashboardCalculatorTest.reviewComputesAllGroupsAndExcludesZzOnlyFromDistinctCount"
+    },
+    {
+      "source": "Validated current snapshot Fact rows and source creationDate proof",
+      "rule": "cohortMaterials.new/historical include entire current-period known positive-spend cohort, sorted current spend descending then ID lexicographically ascending. Current creation-date classification chooses membership; previous spend is same material ID over previous period regardless of its previous classification. Pending never guessed into new/history. ZZ remains in rankings; AIGC treated as one stable row. Unknown spend elsewhere marks known ranking partial without suppressing known members.",
+      "output": "Review.cohortMaterials retained in full for card drilldown. D-069 chart instead uses overall Review.topMaterials first 10, including pending; old two-chart use is superseded.",
+      "evidence": "DashboardCalculatorTest.cohortDetailsAreCompleteIndependentlyRankedAndCompareSameMaterialNotPreviousCohort; cohortDetailsPreservePendingAigcZzAndUnknownMetricSemantics; cohortDetailsDoNotInventRankingWhenCurrentSpendOrCoverageUnknown"
+    },
+    {
+      "source": "Same ID current-period positive-spend fact clicks/impressions/orders/spend",
+      "rule": "ctr=sum(clicks)/sum(impressions); cvr=sum(orders)/sum(clicks); cpm=sum(spend)*1000/sum(impressions). Each metric uses identical eligible rows having both operands, partial excluded pairs annotated. No averaging daily ratios or mismatched partial sums. All pairs absent => UNKNOWN; genuine zero denominator distinct.",
+      "output": "ReviewMaterialRow.ctr/cvr/cpm",
+      "evidence": "DashboardCalculatorTest.cohortCurveCoversArbitraryCrossYearWindowWithMissingZeroAndPositiveDays; cohortDetailsPreservePendingAigcZzAndUnknownMetricSemantics"
+    },
+    {
+      "source": "Same ID's facts and account-day completeness for every date in currentStart..currentEnd",
+      "rule": "Daily positive-spend sum, ascending dates over complete selected range, not a fixed 7-day window. Complete day with no eligible material row returns VALID zero. Missing account-day returns UNKNOWN_INPUT/null; no visual interpolation across missing dates. Current partial-period sum may remain computable and must retain period coverage warning. Inclusive across year boundaries; no future or previous-range extension.",
+      "output": "ReviewMaterialRow.dailySpend shown only when the row is expanded",
+      "evidence": "DashboardCalculatorTest.cohortCurveCoversArbitraryCrossYearWindowWithMissingZeroAndPositiveDays"
+    }
+  ],
+  "resourceBoundary": "Existing maximum inclusive period length 3660 days remains. Full cohort details are not silently truncated to legacy TOP200. Per-material facts are grouped once by date for daily output. No new network calls, storage schema or raw fact mutations."
+}

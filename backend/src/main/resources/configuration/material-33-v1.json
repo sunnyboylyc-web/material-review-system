@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "metric-profile-v1",
+  "id": "material-33-v1",
+  "description": "Fixed first-release acquisition profile. Public field metadata only; no account, anchor or credential values.",
+  "provenance": {
+    "kind": "HISTORICAL_LOCAL_REFERENCE",
+    "references": ["qianchuan-data-collector/contracts/material-day-v1.json", "qianchuan-data-collector/config/settings.json"],
+    "referenceCatalogVersion": "uni-promotion-video-2026-09-29.1",
+    "onlineCapabilityVerified": false,
+    "note": "These local reference fields and grouping rules are not a current official capability check or permission to execute collection."
+  },
+  "metricChangesEnabled": false,
+  "datasetId": "uni_promotion_video_material_day",
+  "dataTopic": "SITE_PROMOTION_POST_DATA_VIDEO",
+  "toolName": "qianchuan_report_uni_promotion_data_get_v1",
+  "timeZone": "Asia/Shanghai",
+  "defaultDatePolicy": "YESTERDAY_ASIA_SHANGHAI",
+  "todayOrFutureAllowed": false,
+  "excludeZeroSpend": false,
+  "sortField": "stat_cost_for_roi2",
+  "sortType": "DESC",
+  "baseGroup": "base",
+  "maxPagesPerGroup": 20,
+  "fixedFilters": {"aggregate_smart_bid_type": "0", "ecp_app_id": "1"},
+  "dimensions": [
+    "stat_time_day", "material_id", "roi2_material_video_name",
+    "roi2_material_video_type", "material_create_time_v2"
+  ],
+  "metrics": [
+    "stat_cost_for_roi2",
+    "total_prepay_and_pay_order_roi2",
+    "live_cvr_rate_for_roi2_v2",
+    "live_convert_rate_for_roi2_v2",
+    "live_show_count_for_roi2_v2",
+    "live_watch_count_for_roi2_v2",
+    "total_pay_order_gmv_for_roi2",
+    "total_pay_order_count_for_roi2",
+    "total_cost_per_pay_order_for_roi2",
+    "total_ecpm_for_roi2",
+    "video_like_count_for_roi2",
+    "video_follow_count_for_roi2",
+    "video_avg_watch_duration_for_roi2",
+    "video_play_count_for_roi2_v2",
+    "video_play_finish_rate_for_roi2_v2",
+    "video_comment_count_for_roi2_v2",
+    "video_play_duration_2s_rate_for_roi2",
+    "video_play_duration_3s_rate_for_roi2",
+    "video_play_duration_5s_rate_for_roi2",
+    "video_play_duration_10s_rate_for_roi2",
+    "additional_delivery_stat_cost_for_roi2_assist",
+    "additional_delivery_total_prepay_and_pay_order_roi2_assist",
+    "additional_delivery_total_pay_order_gmv_include_coupon_for_roi2_assist",
+    "additional_delivery_show_cnt_for_roi2_assist",
+    "additional_delivery_click_cnt_for_roi2_assist",
+    "additional_delivery_ctr_for_roi2_assist",
+    "additional_delivery_convert_rate_for_roi2_assist",
+    "additional_delivery_total_pay_order_count_for_roi2_assist"
+  ],
+  "currentDashboardRequiredMetrics": [
+    "stat_cost_for_roi2", "total_pay_order_gmv_for_roi2", "live_show_count_for_roi2_v2",
+    "live_watch_count_for_roi2_v2", "total_pay_order_count_for_roi2"
+  ],
+  "groupingNote": "The base group carries the creation-time dimension at 100 rows/page; other groups retain four dimensions at 200 rows/page. The spend sort field appears in every group. Current first-release field selection is frozen.",
+  "groups": [
+    {
+      "name": "base",
+      "pageSize": 100,
+      "dimensions": ["stat_time_day", "material_id", "roi2_material_video_name", "roi2_material_video_type", "material_create_time_v2"],
+      "metrics": ["stat_cost_for_roi2", "total_prepay_and_pay_order_roi2", "live_show_count_for_roi2_v2", "live_watch_count_for_roi2_v2", "total_pay_order_gmv_for_roi2", "total_pay_order_count_for_roi2"]
+    },
+    {
+      "name": "video",
+      "pageSize": 200,
+      "dimensions": ["stat_time_day", "material_id", "roi2_material_video_name", "roi2_material_video_type"],
+      "metrics": ["stat_cost_for_roi2", "video_like_count_for_roi2", "video_follow_count_for_roi2", "video_avg_watch_duration_for_roi2", "video_play_count_for_roi2_v2", "video_play_finish_rate_for_roi2_v2", "video_comment_count_for_roi2_v2", "video_play_duration_2s_rate_for_roi2", "video_play_duration_3s_rate_for_roi2", "video_play_duration_5s_rate_for_roi2", "video_play_duration_10s_rate_for_roi2"]
+    },
+    {
+      "name": "assist",
+      "pageSize": 200,
+      "dimensions": ["stat_time_day", "material_id", "roi2_material_video_name", "roi2_material_video_type"],
+      "metrics": ["stat_cost_for_roi2", "additional_delivery_stat_cost_for_roi2_assist", "additional_delivery_total_prepay_and_pay_order_roi2_assist", "additional_delivery_total_pay_order_gmv_include_coupon_for_roi2_assist", "additional_delivery_show_cnt_for_roi2_assist", "additional_delivery_click_cnt_for_roi2_assist", "additional_delivery_ctr_for_roi2_assist", "additional_delivery_convert_rate_for_roi2_assist", "additional_delivery_total_pay_order_count_for_roi2_assist"]
+    },
+    {
+      "name": "ratio1",
+      "pageSize": 200,
+      "dimensions": ["stat_time_day", "material_id", "roi2_material_video_name", "roi2_material_video_type"],
+      "metrics": ["stat_cost_for_roi2", "live_cvr_rate_for_roi2_v2", "live_convert_rate_for_roi2_v2"]
+    },
+    {
+      "name": "ratio2",
+      "pageSize": 200,
+      "dimensions": ["stat_time_day", "material_id", "roi2_material_video_name", "roi2_material_video_type"],
+      "metrics": ["stat_cost_for_roi2", "total_cost_per_pay_order_for_roi2", "total_ecpm_for_roi2"]
+    }
+  ]
+}

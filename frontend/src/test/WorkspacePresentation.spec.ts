@@ -1,0 +1,51 @@
+import { flushPromises, mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
+import App from '../App.vue'
+import { SyntheticMockAdapter } from '../adapters/syntheticMockAdapter'
+
+describe('SC LAB workspace presentation', () => {
+  it('opens business destinations without automatically computing daily or period data', async () => {
+    const adapter = new SyntheticMockAdapter()
+    const daily = vi.spyOn(adapter,'fetchTop'), period = vi.spyOn(adapter,'fetchReview')
+    const page = mount(App,{props:{adapter}})
+    await flushPromises()
+    expect(page.find('.cosmic-workspace').exists()).toBe(true)
+    await page.findAll('.global-nav button')[1].trigger('click')
+    expect(page.get('[aria-labelledby="top-title"]').isVisible()).toBe(true)
+    await page.findAll('.global-nav button')[2].trigger('click')
+    expect(page.get('[aria-labelledby="review-title"]').isVisible()).toBe(true)
+    await page.findAll('.global-nav button')[0].trigger('click')
+    expect(page.find('.cosmic-workspace').exists()).toBe(true)
+    expect(daily).not.toHaveBeenCalled(); expect(period).not.toHaveBeenCalled()
+    page.unmount()
+  })
+  it('filters only loaded rows and opens the selected card detail without another request', async () => {
+    const adapter=new SyntheticMockAdapter(), daily=vi.spyOn(adapter,'fetchTop')
+    const page=mount(App,{props:{adapter}});await flushPromises()
+    await page.get('.date-form--top').trigger('submit');await flushPromises()
+    await page.findAll('.view-switch button')[1].trigger('click')
+    expect(page.findAll('.material-card')).toHaveLength(1)
+    await page.get('[aria-label="搜索当前素材榜单"]').setValue('no-such-material')
+    expect(page.findAll('.material-card')).toHaveLength(0)
+    expect(page.find('.search-empty').exists()).toBe(true)
+    await page.get('[aria-label="搜索当前素材榜单"]').setValue('99999999999999990001')
+    await page.get('.material-card').trigger('click');await flushPromises()
+    expect(page.get('.material-drawer').text()).toContain('99999999999999990001')
+    expect(page.get('.material-drawer').text()).toContain('近 3 天表现')
+    await page.get('[aria-label="关闭素材详情"]').trigger('click')
+    expect(page.find('.material-drawer').exists()).toBe(false)
+    expect(daily).toHaveBeenCalledTimes(1)
+    page.unmount()
+  })
+  it('clears the local filter when switching projects while retaining the previous query result', async () => {
+    const adapter=new SyntheticMockAdapter([{id:'a',name:'A',enabled:true},{id:'b',name:'B',enabled:true}])
+    const page=mount(App,{props:{adapter}});await flushPromises()
+    await page.get('.date-form--top').trigger('submit');await flushPromises()
+    await page.get('[aria-label="搜索当前素材榜单"]').setValue('no-match')
+    await page.findAll('.project-button')[1].trigger('click');await flushPromises()
+    await page.findAll('.project-button')[0].trigger('click');await flushPromises()
+    expect((page.get('[aria-label="搜索当前素材榜单"]').element as HTMLInputElement).value).toBe('')
+    expect(page.findAll('.material-row')).toHaveLength(1)
+    page.unmount()
+  })
+})

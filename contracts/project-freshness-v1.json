@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "freshness-1.0.0",
+  "decisionReferences": ["D-076"],
+  "endpoint": "GET /api/projects/{projectId}/freshness",
+  "scope": "Read-only enabled project current-account verified database snapshot; no collection or writes",
+  "response": {
+    "schemaVersion": "freshness-1.0.0",
+    "projectId": "requested enabled project ID",
+    "latestMcpStatDate": "YYYY-MM-DD or null"
+  },
+  "mapping": {
+    "source": "JdbcDashboardSnapshotReader current day pointer -> verified DayEvidence.sourceType/date",
+    "rule": "max(date) among sourceType=MCP_AUTO in the project's account verified current snapshot; complete empty days qualify",
+    "excluded": ["MANUAL_HISTORY", "previous or isolated input versions", "other accounts", "selected date", "request time", "historical continuity requirement"],
+    "null": "Successful verified snapshot contains no current MCP_AUTO day",
+    "validation": "Existing account/date/current-version/row-count/fact-hash verification applies; raw source files are not re-read by this endpoint"
+  },
+  "errors": {
+    "404": "PROJECT_NOT_ENABLED",
+    "503": "FACT_QUERY_UNAVAILABLE: snapshot read or verification failed; must not display as successful no-MCP null"
+  },
+  "compatibility": "Separate contract; dashboard-query-1.7.0 and all calculation semantics unchanged",
+  "evidence": ["ProjectFreshnessTest", "JdbcDashboardSnapshotReaderTest current pointer and source/hash validation"]
+}

@@ -1,0 +1,92 @@
+/* Natural satellite photography. Catalog thumbnails retain the original shape and phase. */
+.natural-moon{position:relative;display:block;isolation:isolate;mix-blend-mode:screen;overflow:hidden}
+.project-universe{background-color:#080a12}
+.natural-moon img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;user-select:none}
+.moon-disc{display:block;position:relative;height:100%;aspect-ratio:1;max-width:100%;margin:0 auto;overflow:hidden}
+.moon-filter-defs{position:absolute;width:0;height:0;pointer-events:none}
+.moon-disc--crop{border-radius:50%}
+.moon-disc--mapped>img{position:absolute;opacity:0;pointer-events:none}
+.moon-surface{display:block;width:100%;height:100%}
+.moon-surface-pending{position:absolute;inset:4%;border-radius:50%;background:radial-gradient(circle,#c5c6be,#7d8b91)}
+.project-satellite{mix-blend-mode:screen}
+.project-orbits{mix-blend-mode:screen}
+.project-satellite .natural-moon{width:110px;height:110px;max-width:100%;margin-bottom:18px;filter:none;transition:transform .3s ease}
+.project-satellite:hover .natural-moon,.project-satellite:focus-visible .natural-moon{transform:translateY(-7px);filter:none}
+.project-satellite .satellite-meta{letter-spacing:1.2px}
+.project-universe .cosmic-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:15px;z-index:6;max-width:48%}
+.project-universe .cosmic-controls .moon-atlas-trigger{display:inline-flex;align-items:center;gap:7px;border:1px solid #706347;background:#191924;padding:9px 13px;color:#d9c49a;border-radius:30px}
+.project-universe .cosmic-controls .moon-atlas-trigger:hover{background:#282532;border-color:#bba372}
+.has-many-projects .project-satellite .natural-moon{width:90px;height:90px;margin-bottom:14px}
+.project-universe.has-full-orbit{height:auto;min-height:0;max-height:none;padding-bottom:65px}
+.has-full-orbit .project-orbits{position:relative;inset:auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:40px 26px;padding:330px 6% 55px;max-width:1400px;margin:auto}
+.has-full-orbit .project-satellite{position:relative;top:auto;left:auto;transform:none;justify-self:center;width:100%;max-width:235px}
+.has-full-orbit .satellite-label{width:100%;box-sizing:border-box}
+.has-full-orbit .project-orbit-lines,.has-full-orbit .core-caption{display:none}
+.has-full-orbit .cosmic-center{top:600px;opacity:.25}
+.moon-atlas{box-sizing:border-box;width:min(1360px,calc(100vw - 48px));max-height:calc(100dvh - 48px);margin:auto;padding:0;border:1px solid #4b4753;border-radius:22px;background:#0d111d;color:#e9e6df;box-shadow:0 40px 120px #000a;overflow:auto;scrollbar-color:#514e59 #0d111d}
+.moon-atlas::backdrop{background:#02040bd9;backdrop-filter:blur(10px)}
+.moon-atlas-heading{display:flex;justify-content:space-between;gap:20px;padding:34px 40px 20px;background:radial-gradient(ellipse at 20% 0,#b49b7520,transparent 70%)}
+.moon-atlas-heading .overline{margin:0 0 16px;color:#ccb78e;font-size:10px;letter-spacing:2px}
+.moon-atlas-heading h2{margin:0;font:32px/1.5 "SimSun",serif;letter-spacing:2px}
+.moon-atlas-heading #moon-atlas-description{font-size:12px;line-height:1.8;color:#a2adc2;margin:12px 0 0}
+.moon-atlas-heading .icon-button{flex:none;align-self:flex-start}
+.moon-atlas-note{padding:0 40px 23px;display:flex;justify-content:space-between;gap:15px;border-bottom:1px solid #2c3141;font-size:10px;line-height:1.8;color:#98a1b6}
+.moon-atlas-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;padding:28px 36px}
+.moon-atlas-grid article{min-width:0;padding:18px 18px 15px;border:1px solid #2c3346;border-radius:13px;background:linear-gradient(150deg,#171c2c,#101522);transition:border-color .2s}
+.moon-atlas-grid article:hover{border-color:#776d5b}
+.moon-atlas-number{display:flex;align-items:center;justify-content:space-between;color:var(--satellite-accent);font:12px Consolas,monospace;letter-spacing:1px}
+.moon-atlas-number small{font:10px "Microsoft YaHei",sans-serif;color:#97a2b9}
+.moon-atlas-grid .natural-moon{height:176px;width:100%;margin:13px auto 10px}
+.moon-atlas-english{margin:18px 0 8px;font:9px Consolas,monospace;color:var(--satellite-accent);letter-spacing:2px}
+.moon-atlas-english>span{float:right;font:8px "Microsoft YaHei",sans-serif;letter-spacing:0;color:#a2aabb}
+.moon-atlas-grid h3{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;font-size:19px;font-weight:500}
+.moon-atlas-grid h3 span{color:#b4a58b;font-size:10px;font-weight:400}
+.moon-atlas-description{min-height:42px;font-size:11px;line-height:1.9;color:#a1abc0;margin:13px 0 16px}
+.moon-atlas-grid details{padding-top:13px;border-top:1px solid #2c3346;font-size:10px;color:#a3aec4;line-height:1.7}
+.moon-atlas-grid summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:9px}
+.moon-atlas-grid summary span{color:#c7b68e}
+.moon-atlas-grid details p{overflow-wrap:anywhere}.moon-atlas-grid details a{color:#dac79f;text-underline-offset:3px}
+.moon-atlas footer{padding:0 40px 26px;color:#8c98af;font-size:10px;line-height:1.9}
+@media(min-width:1800px){.project-satellite .natural-moon{width:122px;height:122px}.has-many-projects .project-satellite .natural-moon{width:90px;height:90px}}
+@media(max-width:1100px){.project-satellite .natural-moon{width:92px;height:92px}.has-many-projects .project-satellite .natural-moon{width:70px;height:70px}.has-full-orbit .project-satellite .natural-moon{width:84px;height:84px}.moon-atlas-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.project-universe .cosmic-controls{max-width:42%;gap:12px}.has-full-orbit .project-orbits{padding-left:4%;padding-right:4%;gap:35px 20px}.has-full-orbit .satellite-label{width:100%}.has-full-orbit .satellite-label strong{font-size:15px}}
+@media(max-width:900px){.has-full-orbit .project-orbits{grid-template-columns:repeat(3,minmax(0,1fr))}.project-universe .cosmic-controls{max-width:38%}.moon-atlas-heading{padding:26px 24px 18px}.moon-atlas-heading h2{font-size:27px}.moon-atlas-note{padding:0 24px 18px;flex-direction:column;gap:3px}.moon-atlas-grid{padding:22px;gap:14px}.moon-atlas-grid .natural-moon{height:150px}.moon-atlas-grid article{padding:15px}.moon-atlas-grid h3{font-size:17px;flex-wrap:wrap}}
+@media(max-width:660px){.moon-atlas-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.moon-atlas-heading h2{font-size:22px}.moon-atlas-grid .natural-moon{height:135px}.moon-atlas-description{min-height:63px}}
+@media(max-width:540px){.project-universe .cosmic-controls{top:232px;left:6%;right:6%;max-width:none;justify-content:space-between;gap:12px}.project-universe .cosmic-controls .moon-atlas-trigger{order:-1;flex-basis:auto;font-size:10px;padding:8px 11px}.project-universe .cosmic-controls>span{margin-left:auto}.project-universe .cosmic-controls>button:last-child{flex-basis:100%;text-align:right}.project-universe .project-satellite .natural-moon{width:78px;height:78px;margin-bottom:16px}.project-universe.has-full-orbit .project-orbits{padding:440px 18px 25px;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 14px}.project-universe.has-full-orbit{padding-bottom:85px}.moon-atlas{width:calc(100vw - 20px);max-height:calc(100dvh - 24px);border-radius:15px}.moon-atlas-heading{padding:22px 18px 16px}.moon-atlas-heading h2{font-size:21px;letter-spacing:0}.moon-atlas-heading #moon-atlas-description{font-size:10px}.moon-atlas-heading .overline{font-size:8px}.moon-atlas-note{padding:0 18px 18px;font-size:9px}.moon-atlas-grid{padding:16px 12px;gap:12px 9px}.moon-atlas-grid article{padding:13px 10px}.moon-atlas-grid .natural-moon{height:123px}.moon-atlas-grid h3{font-size:17px;display:grid;gap:7px}.moon-atlas-description{font-size:10px;min-height:57px}.moon-atlas-grid summary{font-size:8px;gap:4px}.moon-atlas-number small{font-size:8px}.moon-atlas footer{padding:0 20px 20px;font-size:9px}}
+@media(prefers-reduced-motion:reduce){.project-satellite .natural-moon{transition:none}.project-satellite:hover .natural-moon{transform:none}}
+
+.home-project-status,.workspace--home>.recovery-notice{margin:20px 5%;padding:14px 18px;border:1px solid #4b4050;border-radius:12px;background:#171421;font-size:12px;line-height:1.8}
+
+/* Revision 05: compact horizontal project navigation and galaxy connections. */
+.project-universe{--moon-size:66px}
+.project-universe .project-orbits,.project-universe .project-satellite{mix-blend-mode:normal}
+.project-universe .project-satellite{display:flex;align-items:center;justify-content:center;gap:22px;width:max-content;cursor:default}
+.project-universe .project-satellite .satellite-label{display:grid;gap:12px;padding:17px 19px;background:linear-gradient(120deg,#151829f5,#0b0e19f5)}
+.project-universe .project-satellite .satellite-label strong{font-size:18px;line-height:1.4}
+.project-universe .project-satellite .satellite-open{display:block;flex:none;width:var(--moon-size);height:var(--moon-size);padding:0;border:0;border-radius:50%;background:none;color:inherit;cursor:pointer}
+.project-universe .project-satellite .natural-moon{width:var(--moon-size);height:var(--moon-size);margin:0;max-width:none;filter:none;transform:none}
+.project-universe .satellite-open:hover .natural-moon{transform:translateY(-3px)}
+.project-universe .satellite-open:focus-visible{outline:2px solid #e1c584;outline-offset:7px}
+.satellite-destinations{display:flex;align-items:center;gap:14px}
+.satellite-destinations button{display:inline-flex;align-items:center;gap:8px;padding:0;min-height:24px;border:0;border-radius:3px;background:transparent;color:#b7bfce;font:11px "Microsoft YaHei",sans-serif;cursor:pointer}
+.satellite-destinations button:hover{color:#ecd19b}
+.satellite-destinations button:focus-visible{outline:2px solid #e1c584;outline-offset:4px}
+.satellite-destinations button svg{color:#c1aa79;opacity:.75}
+.satellite-destinations>span{width:1px;height:10px;background:#454657}
+.project-connections{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:2;fill:none}
+.project-connection-line{stroke:#d4bd85;stroke-width:1;opacity:.66;vector-effect:non-scaling-stroke}
+.project-connection-glow{stroke:#e8c36d;stroke-width:4;opacity:.18;filter:blur(3px);vector-effect:non-scaling-stroke}
+.project-connections circle{fill:#f0d59a;stroke:#e7ce9660;stroke-width:4}
+.project-universe.has-many-projects{--moon-size:54px}
+.project-universe.has-many-projects .project-satellite{gap:16px}
+.project-universe.has-many-projects .satellite-label{width:180px;padding:13px 15px}
+.project-universe.has-many-projects .satellite-label strong{font-size:15px}
+.project-universe.has-full-orbit .project-satellite{width:100%;max-width:275px}
+.project-universe.has-full-orbit .satellite-label{width:auto;min-width:0;flex:1}
+.project-universe.has-full-orbit .project-orbits{padding-top:375px;gap:38px 28px}
+.project-universe.has-full-orbit .project-connection-line{opacity:.24}
+.project-universe.has-full-orbit .project-connection-glow{opacity:.07}
+@media(min-width:1800px){.project-universe{--moon-size:73.2px}.project-universe.has-many-projects{--moon-size:54px}}
+@media(max-width:1100px){.project-universe{--moon-size:55.2px}.project-universe .project-satellite{gap:16px}.project-universe.has-many-projects{--moon-size:42px}.project-universe.has-many-projects .satellite-label{width:140px;padding:12px}.project-universe.has-many-projects .satellite-label strong{font-size:13px}.project-universe.has-full-orbit{--moon-size:50.4px}.project-universe.has-full-orbit .project-orbits{grid-template-columns:repeat(3,minmax(0,1fr));gap:30px 22px}.project-universe.has-full-orbit .satellite-label{width:auto}}
+@media(max-width:900px){.project-universe.has-many-projects .project-orbits{grid-template-columns:repeat(2,minmax(0,1fr));padding:340px 5% 40px;gap:32px 26px}.project-universe.has-many-projects .project-satellite{width:100%;max-width:290px}.project-universe.has-many-projects .satellite-label{width:auto;flex:1;min-width:0}.project-universe.has-full-orbit .project-orbits{padding-top:375px}}
+@media(max-width:540px){.project-universe,.project-universe.has-many-projects,.project-universe.has-full-orbit{--moon-size:46.8px}.project-universe .project-orbits,.project-universe.has-many-projects .project-orbits,.project-universe.has-full-orbit .project-orbits{grid-template-columns:1fr;gap:24px;padding:440px 7% 35px}.project-universe .project-satellite,.project-universe.has-many-projects .project-satellite,.project-universe.has-full-orbit .project-satellite{width:100%;max-width:none;gap:26px}.project-universe .project-satellite .satellite-label{width:auto;flex:1;min-width:0;padding:14px 17px;gap:10px}.project-universe .project-satellite .satellite-label strong{font-size:16px}.satellite-destinations{gap:18px}.satellite-destinations button{min-height:28px;font-size:12px;gap:9px}.project-universe .project-connections{display:block}.project-universe.has-many-projects .cosmic-center{top:415px}.project-universe .project-connection-line{opacity:.42}}
+@media(prefers-reduced-motion:reduce){.project-universe .satellite-open:hover .natural-moon{transform:none}}

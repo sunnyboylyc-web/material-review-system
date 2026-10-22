@@ -1,0 +1,49 @@
+{
+  "contractVersion": "metric-selection-v1",
+  "acceptance": "For one synthetic project, disable then reenable an optional known metric through local maintenance; the immutable configuration revision, Java collection plan, Python fake-transport output and Java input validation agree. Required/unknown/duplicate fields, missing rows keys/groups and changed selections fail without publishing success. Historical v1 sources and manual evidence retain their own contracts.",
+  "scope": "Only the existing 28-metric catalog; 5 dashboard dependencies and 5 dimensions fixed. No arbitrary registry, formula changes, schema migration, cloud, second real account or automatic historical refill.",
+  "owners": {
+    "core": "metric_compatibility_review: configuration and validation Java plus related tests/fixtures",
+    "collector": "collector_readiness: tools/collector only",
+    "ui": "metric_selection_ui: frontend only",
+    "integration": "main: API/plan wiring, cross-process verification, contracts and memory"
+  },
+  "catalog": {
+    "id": "material-33-v1",
+    "resource": "backend/src/main/resources/configuration/material-33-v1.json",
+    "historicalVersion": "uni-promotion-video-2026-09-29.1",
+    "onlineCapabilityVerified": false,
+    "required": ["stat_cost_for_roi2", "total_pay_order_gmv_for_roi2", "live_show_count_for_roi2_v2", "live_watch_count_for_roi2_v2", "total_pay_order_count_for_roi2"],
+    "selection": "Reject unknown, duplicate or missing required IDs; canonical order is the base catalog order. Keep all five groups, dimensions, page sizes, filters and sort; intersect each group's metrics with the selection."
+  },
+  "configuration": {
+    "storedVersion": "project-configuration-v2",
+    "field": "enabledMetrics: canonical metric ID array, included in candidateHash and immutable revision",
+    "legacy": "Read v1 as full 28 without rewriting its bytes. Old project-only preflight/apply preserves the current selection; never silently enables all metrics.",
+    "http": "Existing project-configuration-v1 HTTP envelope adds enabledMetrics, metricCatalog[{id,label,required}], metricChangesEnabled:true. POST may include enabledMetrics; omitted means preserve current. Existing local guards and independent readback apply.",
+    "history": "Selection affects subsequent plans, not historical rows. Reenable does not refill past data; never infer zero for a field not collected."
+  },
+  "input": {
+    "manifestSchema": "qianchuan-material-day-manifest-2.0.0",
+    "materialSchema": "qianchuan-material-day-standard-2.0.0",
+    "acquisitionContract": {
+      "catalogId": "material-33-v1",
+      "catalogSha256": "SHA-256 of bundled base resource bytes",
+      "enabledMetrics": "canonical selected metric ID array",
+      "selectionSha256": "SHA-256 of compact UTF-8 JSON canonical selected array",
+      "configurationRevision": "immutable configuration document SHA-256"
+    },
+    "binding": "Same acquisitionContract in both source files; validate supported schemas/catalog and catalog/selection hashes. The executor independently checks plan/configuration file hashes and derivation; input validator checks the embedded snapshot, not the active configuration or an online identity claim.",
+    "rows": "Exact selected metrics plus fixed five dimensions; missing key is not equivalent to explicit null/UNKNOWN. V2 numeric metric values become exact decimal text without unit conversion or rounding; source strings/null/UNKNOWN remain unchanged. Material ID must already be a nonempty string. The upstream HTTP response bytes are separate immutable evidence; no existing input JSON is modified.",
+    "pagination": "All five expected groups with original page sizes must close even for zero-row days.",
+    "zeroSpendMissingGroup": "Observed live on authorized 2026-10-12: non-base groups can omit whole zero-spend material rows. Preserve the proven base-zero row, merge all observed values first, then mark only still-absent selected metrics UNKNOWN; receipt records material/group/reason/unknownFields under base-zero-spend-absent-group-unknown-v1. Never rewrite raw HTTP, substitute zero, permit positive-spend missing groups or forgive malformed returned rows.",
+    "legacy": "Automatic v1 requires known historical catalog, exact 33 fields and five groups; no synthetic catalog bypass. MANUAL_HISTORY remains under its separate reader and mapping, including _manual_history."
+  },
+  "execution": {
+    "default": "Offline; no credentials read, network, database, legacy writes or deletion",
+    "real": "Requires current user authorization, explicit single project/date plan, --execute and project-local private credential file; only the established read-only MCP report tool is callable",
+    "outputs": "Unique .local/collector-runs directory, immutable raw pages/publication/receipt; COLLECTED_NOT_IMPORTED never means database acceptance",
+    "limits": "One explicit numeric anchor; JSON MCP responses only. Current official capability and selected-field combinations require actual authorized validation."
+  },
+  "stop": "Do not mark items 1/2 fully complete without a real authorized new-day round trip; item 3 remains user business acceptance. Items 4/5 remain paused by D-044."
+}

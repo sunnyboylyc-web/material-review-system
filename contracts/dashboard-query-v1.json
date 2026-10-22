@@ -1,0 +1,133 @@
+{
+  "materialTypeReview": {
+    "schemaVersion": "material-type-review-1.0.0",
+    "decision": "2026-10-19 user requested local implementation: original/mixed/other, seven metrics, no total row, original and mixed performance cards.",
+    "output": "Additive optional Review.materialTypes: periods CURRENT/PREVIOUS, comparisons and complete current-period materials by original/mixed/other. Legacy responses omit this block; absence is not an empty calculated result. Existing 1.7.0 fields and formulas are preserved.",
+    "eligibility": "For each period independently, require Fact.date within inclusive start/end AND VERIFIED D073 creationDate, as-of period.end, within the same inclusive range. Only positive-spend rows contribute; unknown spend remains unknown/partial. Canonical AIGC ID -2 has NOT_APPLICABLE creation date and is excluded, with an explicit excluded count. Truly unresolved dates are excluded and make aggregates partial.",
+    "classification": "Resolve latest known material name as-of period.end. Name containing 原创 => original; otherwise containing 混剪 => mixed; remainder => other. Other does NOT require any name keyword. Its population is the same dual-date eligible population minus original minus mixed, not the unfiltered period overall. Sum spend/count for that remainder; recompute rates from its paired inputs rather than subtracting rates. A material ID belongs to one group per period. Missing name stays visibly partial. AI/star labels do not override name priority.",
+    "metrics": {
+      "spend": "Sum eligible known spend.",
+      "roi": "Sum paired gmv / sum paired spend.",
+      "materialCount": "Distinct material IDs with eligible positive-spend, known non-ZZ-name facts, inheriting existing count policy. ZZ money is retained; uncertain name/count remains partial or UNKNOWN.",
+      "ctr": "Sum paired clicks / sum paired impressions; display percent.",
+      "cvr": "Sum paired orders / sum paired clicks; display percent.",
+      "cpm": "Sum paired spend / sum paired impressions * 1000.",
+      "cpc": "Sum paired spend / sum paired clicks."
+    },
+    "missing": "Ratios pair valid operands on the same rows, never average ratios. Known zero denominator remains ZERO_DENOMINATOR; no usable input remains UNKNOWN_INPUT; incomplete coverage and omitted operands carry partial reasons. Complete empty spend/count is genuine zero.",
+    "comparison": "Current group metric / previous group's independently filtered metric, not percent growth. Detail previousSpend refers to the same ID and applies previous-period dual-date eligibility, normally zero for disjoint periods. Existing 01-04 detail rules are unchanged.",
+    "details": "Rank eligible current materials by spend descending then ID. Client display limit is independent per original/mixed card, default 10, range 1-200; it never limits group totals. Daily curves cover exactly the current period, with missing-account days unknown rather than zero.",
+    "index": "Reuse account/version-bound PreparedSnapshot material dimension change points (binary-search as-of dates/names) and per-material monthly summaries. Candidate lookup is bounded to the selected fact range. No historical full scan to rediscover first dates per request, no new MySQL business table. Manifest changes still rebuild the prepared index under D180 rules.",
+    "compatibility": "Omit null materialTypes during serialization to retain D187 saved-response canonical checksums. New full responses validate the block in the frontend. Old saved results require refresh for type analysis.",
+    "evidence": "MaterialTypeReviewTest, MaterialTypeReview.spec.ts, ReviewSnapshotControllerTest.d187SnapshotWithoutTypeBlockRetainsItsOriginalChecksum; local synthetic browser evidence qa/runs/material-type-ui-20261019. Production deployment and real-data acceptance not performed."
+  },
+  "d180DerivedReadPolicy": {
+    "version": "dashboard-derived-day-v1",
+    "decision": "D180: user approved layered verification on 2026-10-18; business formulas and schema remain 1.7.0",
+    "source": "Current account/day pointer + versionId/contentHash/sourceType/rowCount manifest, queried in a fresh repeatable-read read-only transaction on every business request",
+    "processing": "New or changed days use the existing full identity, ordered row SHA and complete day content-hash verification. Unchanged day projections are bound to account/day/version/hash/source/count/ruleVersion and private payload SHA. A single most-recent account PreparedSnapshot owns immutable facts, as-of dimension change points and per-material monthly additive/paired statistics.",
+    "output": "All existing Top/Review fields, precision, partial reasons, missing/zero distinction, historical anchors and snapshotFingerprint remain unchanged. Annual/lifetime ratios use sums of paired numerator/denominator, never averages of ratios. Complete months use summaries; boundary months use bounded fact rows. Short curves still use their requested date range.",
+    "integrityBoundary": "A warm business read does not revalidate unchanged raw bytes. Direct raw tampering without version metadata changes may be discovered only by independent strict audit. Operations inspect, downloads, import/readback and recovery checks retain strict readers. Known strict audit failure blocks this account's derived reuse until full strict rebuild succeeds.",
+    "lifecycle": "Private derived cache is rebuildable and not a replacement for original evidence or backup. No new business MySQL table or external service. A manifest change rebuilds this account's in-memory indices from validated projections; only changed/missing day projections require raw verification. This is not yet an affected-month-only index update algorithm.",
+    "evidence": "D180CalculationEquivalenceTest, D180MaterialSummaryTest, D180ReviewRegressionTest, DerivedDayCacheTest, LayeredDashboardReaderTest; isolated MySQL/performance and release status in docs/CURRENT_STATE.md"
+  },
+  "additivePeriodTotals": {
+    "mappingVersion": "d175-period-totals-2026-10-17.1",
+    "sourceFields": {
+      "gmv": "Fact.gmv (total_pay_order_gmv_for_roi2)",
+      "impressions": "Fact.impressions (live_show_count_for_roi2_v2)",
+      "clicks": "Fact.clicks (live_watch_count_for_roi2_v2)"
+    },
+    "output": "CURRENT/PREVIOUS Period.groups[].metrics adds gmv, impressions and clicks for overall/new/historical/aigc using existing NumericResult.",
+    "rule": "Existing Totals.numberField independently aggregates known positive-spend eligible facts. Preserve partial sums, UNKNOWN_INPUT, genuine empty zero, MISSING_FIELD, MISSING_ACCOUNT_DAYS and UNKNOWN_SPEND. Never sum truncated TOP rows or invert ratios.",
+    "compatibility": "Additive only; schema 1.7.0, legacy metricKeys/comparisons/orders/row fields/formulae/database unchanged. Old UI ignores added keys. Old saved responses without these keys remain distinguishable as unknown until refreshed.",
+    "evidence": "D175 home totals synthetic and legacy calculation regression tests; real cloud interface acceptance pending."
+  },
+  "schemaVersion": "dashboard-query-1.7.0",
+  "d074PeriodCpc": {
+    "decision": "D-074",
+    "source": "Fact.spend (stat_cost_for_roi2) and Fact.clicks (live_watch_count_for_roi2_v2)",
+    "rule": "Within each period/group, positive-spend eligible rows with both spend and clicks known are paired; sum spend / sum clicks. Missing operands excluded together and marked partial; no valid inputs UNKNOWN, known zero clicks ZERO_DENOMINATOR. Comparison remains current CPC / previous CPC with partial reasons propagated.",
+    "output": "Period.groups[].metrics.cpc and Review.comparisons[].metrics.cpc for overall/new/historical/aigc",
+    "evidence": "DashboardCalculatorTest.d074PeriodCpcUsesMatchedInputsAndAllGroupComparisons; d074PeriodCpcDistinguishesUnknownZeroAndPartialCoverage",
+    "compatibility": "Only additive cpc metric and schema fingerprint update; D-073 date/cohort/AIGC, all other calculations and row fields unchanged."
+  },
+  "d073Classification": {
+    "decision": "D-073",
+    "aigcIdentity": "Canonical materialId exactly -2 using the existing source normalization; never infer from a name containing AI/AIGC.",
+    "ordinaryDate": "Minimum of non-null source createdDate values and business Fact.date values among same material records visible at or before query anchor. Fact.date is stat_time_day, never database inserted/updated timestamp. Source conflicts or later source creation are resolved by earliest date without editing evidence; future records cannot contribute older metadata.",
+    "aigcDate": "creationDate:{status:NOT_APPLICABLE,date:null,reason:null}; no new/historical classification or creation-missing alarm.",
+    "groups": "Period.groups and comparisons ordered overall,new,historical,aigc. cohortMaterials adds aigc. Pending counts only truly unresolvable ordinary materials; AIGC contributes to overall, spend/count ratios and rankings exactly as before, but to neither new nor historical.",
+    "aigcLifetime": "Accumulate known positive-spend facts from this material's earliest visible business Fact.date through selected date. Coverage uses that same range and is not null; absence of a meaningful creation date does not itself add partial/UNKNOWN_CREATION_DATE. Real gaps/unknown metrics retain partial status. Label as accumulated available data, not full lifetime since creation.",
+    "evidence": "DashboardCalculatorTest.d073EarliestBusinessDateWinsAcrossSourceDisagreementAndAnchorDoesNotLeakFutureRows; d073AigcHasIndependentGroupAndNotApplicableCreationWithoutSyntheticPartial; FactMissingDetailsTest.d073AigcDoesNotReportInapplicableCreationButStillReportsUnknownMetrics"
+  },
+  "d069OverallTopDetail": {
+    "decision": "D-069",
+    "topMaterials": "Existing overall current-period positive-spend rank members/order/limit unchanged, including pending creation cohorts. Rows now add ctr/cvr/cpm/dailySpend using identical ReviewMaterialRow rules to cohortMaterials. Unknown creation never excludes a ranked material.",
+    "display": "Single overall TOP10 paired current/previous spend chart, replacing two cohort charts. Same material previous spend, not previous rank peers. Click uses appended current-period detailed fields and full inclusive date curve.",
+    "compatibility": "newMaterials keeps legacy MaterialRow; cohortMaterials retained unchanged for group drilldown. No new business formula or collection/data change."
+  },
+  "d067AdditionalTopMetrics": {
+    "decision": "D-067",
+    "sourceFields": {"impressions":"live_show_count_for_roi2_v2","clicks":"live_watch_count_for_roi2_v2","orders":"total_pay_order_count_for_roi2"},
+    "window": "selectedDate and prior 2 days, inclusive; same as recent3Cpc/recent3Cpm",
+    "recent3Impressions": "Sum available impressions from same material's positive-spend eligible facts in the three-day window; NumericResult partial/unknown semantics unchanged.",
+    "recent3Clicks": "Sum available clicks from same eligible window; partial/unknown semantics unchanged.",
+    "recent3Ctr": "Sum clicks / sum impressions over identical eligible rows having both operands. No averaging ratios or mixing independently partial sums.",
+    "recent3Cvr": "Sum orders / sum clicks over identical eligible rows having both operands. No averaging ratios or mixing independently partial sums.",
+    "evidence": "DashboardCalculatorTest.d067ThreeDayDetailsKeepWindowEligibilityAndMatchedOperands; d067ThreeDayDetailsDistinguishPartialUnknownAndZeroDenominator",
+    "compatibility": "Additive fields only; existing D-065/D-066 creation date and partial metric rules unchanged. Query schema fingerprint now binds 1.4.0."
+  },
+  "status": "D074_PERIOD_CPC_IMPLEMENTED_PENDING_INDEPENDENT_VERIFICATION",
+  "currentDecisionReferences": ["D-065", "D-066", "D-067", "D-069", "D-073", "D-074"],
+  "creationMapping": {
+    "source": "Raw material_create_time_v2 projected as Fact.createdDate. Offset timestamps converted to Asia/Shanghai before date extraction; dates and naive timestamps are Shanghai local dates. Missing/unparseable becomes null; source untouched.",
+    "output": "Each MaterialRow, ReviewMaterialRow and TopRow has creationDate:{status:VERIFIED|PENDING|NOT_APPLICABLE,date:ISO-date|null,reason:null|MISSING_CREATION_DATE}. Source-only conflict/after-observation codes remain operations diagnostics, not query date status.",
+    "rule": "D-073 supersedes D-065 source-only proof. Ordinary materials use the earliest source creation or business stat_date among records visible <=anchor; VERIFIED even if source creation is missing/conflicting/later. No visible ordinary facts means PENDING. AIGC exact canonical ID -2 is NOT_APPLICABLE.",
+    "cohorts": "AIGC=>aigc independently of dates. Ordinary VERIFIED date in each inclusive period=>new; earlier=>historical; genuinely unresolved=>pending. Each period classifies independently. Raw facts never rewritten.",
+    "compatibility": "firstSpend remains a deprecated historical calculation with its original meaning only. New UI and cohorts/lifetime MUST use creationDate, never rename firstSpend or fallback to it."
+  },
+  "partialResultMapping": {
+    "numericResult": "Existing status/value plus partial:boolean and partialReasons:string[]. VALID may be partial; UNKNOWN_INPUT never receives a numeric zero. Reasons: MISSING_ACCOUNT_DAYS, MISSING_FIELD, UNKNOWN_SPEND, MISSING_MATERIAL_NAME, COHORT_UNASSIGNED, UNKNOWN_CREATION_DATE.",
+    "sums": "Within covered days, use known positive-spend-eligible rows. Sum available values; if all eligible required field values absent return UNKNOWN_INPUT. Covered genuine empty range permits zero; partially covered empty range permits zero + MISSING_ACCOUNT_DAYS. Unknown-spend rows cannot be eligible but mark results partial; all-spend-unknown returns UNKNOWN.",
+    "ratios": "ROI uses GMV/spend, CTR clicks/impressions, CVR orders/clicks, CPC spend/clicks, CPM 1000*spend/impressions. For EACH ratio retain only same eligible rows having BOTH required operands, sum both from this identical set, then divide. Excluded pairs mark MISSING_FIELD. No valid pairs in nonempty/unknown input returns UNKNOWN_INPUT; genuine complete empty denominator gives ZERO_DENOMINATOR. Never mix independently partial column totals.",
+    "counts": "Known qualified distinct IDs counted, ZZ row exclusion unchanged. Unknown names/unknown spend mark partial; no known included IDs and unresolved qualification => UNKNOWN, not zero. Fully known all-ZZ group is zero. Group with no assigned input but any pending/unknown eligibility returns UNKNOWN rather than zero; group metrics annotate COHORT_UNASSIGNED when any positive ID creation remains pending.",
+    "ranking": "Known positive materials remain visible when other spend is unknown; TOP rankingState PARTIAL. Missing ranking day remains UNAVAILABLE with no rows. Period metricsState PARTIAL reflects coverage, pending or partial numeric inputs.",
+    "lifetime": "Ordinary VERIFIED derived date=>date..selected inclusive. AIGC NOT_APPLICABLE=>same-ID earliest visible business fact day..selected, normal coverage and no artificial UNKNOWN_CREATION_DATE. Truly PENDING ordinary date retains existing available partial fallback. Missing days/fields remain partial; future facts excluded.",
+    "windowSpend": "New TopRow.windowSpend uses selected date and prior 6 days inclusive, matching windowRoi scope.",
+    "comparison": "Existing current/previous indices and periodChange arithmetic unchanged; partial reasons propagate from both numeric inputs. Spend share and count share use same period eligibility, not fabricated normalization."
+  },
+  "periodDisplayMapping": "contracts/period-review-display-v1.json",
+  "additiveReviewFields": {
+    "cohortMaterials": "Object with new, historical and aigc arrays, complete eligible current-period cohort members independently ranked by currentSpend descending then materialId text ascending. Not truncated by legacy limit or overall TOP list. Overall chart uses topMaterials, not these groups.",
+    "ReviewMaterialRow": "All MaterialRow fields flattened plus ctr, cvr, cpm NumericResults for current-period positive-spend facts and dailySpend array of {date,spend:NumericResult} for every current-period date ascending. Previous spend belongs to the same ID, irrespective of its previous-period cohort.",
+    "compatibility": "1.3 adds creationDate and partial metadata; confirmed D-065 changes group membership and partial/lifetime semantics. Legacy field shapes remain; fingerprint includes schema version. No collection or fact writes."
+  },
+  "decisionReferences": ["D-019", "D-027", "D-028", "D-029", "D-031", "D-036", "D-039", "D-040", "D-041", "D-042", "D-054", "D-055"],
+  "reconstructionMappingVersion": "top-lifetime-1.0.0",
+  "additiveTopFields": {
+    "recent3Roi": "Eligible fact.gmv sum / fact.spend sum for selected date and prior 2 days; same spend>0 eligibility and recent3Coverage as recent3Spend. Result status preserves unknown and zero denominator.",
+    "lifetimeSpend": "D-073 uses earliest source/business date for ordinary and earliest available fact date for AIGC; see partialResultMapping and d073Classification.",
+    "lifetimeRoi": "Same creation/known-data range; matched operand eligible rows for GMV/spend, never average daily ROI. Partial metadata required.",
+    "lifetimeCoverage": "Ordinary VERIFIED date..selected; AIGC earliest available fact..selected. Null only for genuinely PENDING ordinary. Coverage complete does not mean fields complete.",
+    "compatibility": "annualRoi/annualCoverage and legacy trend/orders remain unchanged for older consumers; reconstruction UI uses lifetime fields and hides legacy trend/orders. No source fact edits."
+  },
+  "reconstructionEvidence": "DashboardCalculatorTest verifies cross-year sums, selected-date cutoff, first-spend pending, missing-day partial coverage, weighted ROI, unknown GMV and zero denominators; verify_dashboard_api.py independently compares raw-source calculations.",
+  "javaWireModel": "cn.datadashboard.calculation.DashboardModels",
+  "scope": "Read-only local current-version facts for one configured project. No collection, ingestion, deployment or configuration writes.",
+  "endpoints": {
+    "GET /api/projects": "Enabled project list; account binding only from private server configuration",
+    "GET /api/projects/{projectId}/review": ["currentStart", "currentEnd", "previousStart", "previousEnd", "limit"],
+    "GET /api/projects/{projectId}/top": ["date", "limit"]
+  },
+  "numericResult": {"status": ["VALID", "UNKNOWN_INPUT", "ZERO_DENOMINATOR"], "value": "number only when VALID, otherwise null; ratios are not multiplied by 100", "partial": "boolean", "partialReasons": "string[]"},
+  "groupKeys": ["overall", "new", "historical", "aigc"],
+  "metricKeys": ["spend", "materialCount", "ctr", "cvr", "spendShare", "roi", "cpm", "cpc"],
+  "coverage": "Account-day completeness independent of metric availability; no covered days means UNKNOWN totals. Some covered days permit partial available sums; metric-specific missing pairs excluded together with partial metadata.",
+  "firstSpendEvidence": "DEPRECATED field for old consumers only: legacy proof from creation through earliest positive days. No longer used for D-065 cohorts, new UI date or cumulative range; use creationMapping.",
+  "metadataSelection": "For each query anchor choose latest non-null name not after anchor; unknown name remains null. ZZ is case-insensitive substring per eligible row and affects distinct counts only. Exact source AIGC identity is normalized by the reader, never fuzzy name matching.",
+  "limits": {"minRows": 1, "maxRows": 200, "defaultRows": 20, "newMaterialRows": 10, "maxRangeDays": 3660},
+  "resourceLimitsMeaning": "Engineering safety limits for local MVP; request outside bounds is rejected visibly, never silently truncated. Future changes do not alter stored facts.",
+  "consistency": "One read-only REPEATABLE READ snapshot per request; current version pointers, account/date/disposition and row hashes/counts verified. snapshotFingerprint binds all loaded day versions. No shared result cache yet.",
+  "acceptance": "Complete confirmed calculations on synthetic branches, real local MySQL read-only queries independently compared, frontend result binding and query refresh tested; cloud and ops configuration synchronization excluded from this unit."
+}
