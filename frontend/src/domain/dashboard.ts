@@ -23,6 +23,12 @@ export interface ReviewQuery {
   current: DateRange
   previous: DateRange
 }
+export interface MaterialTypeQuery {
+  current: DateRange
+  currentTest: DateRange
+  previous: DateRange
+  previousTest: DateRange
+}
 
 export interface Coverage {
   state: CoverageState
@@ -101,6 +107,7 @@ export interface MaterialTypeGroup {
 export interface MaterialTypePeriod {
   key: 'CURRENT' | 'PREVIOUS'
   range: DateRange
+  testRange?: DateRange | null
   coverage: Coverage
   groups: MaterialTypeGroup[]
   excludedUndatedMaterials: number
@@ -116,10 +123,23 @@ export interface MaterialTypeRow {
   dailySpend: { date: string; spend: NumericResult }[]
 }
 export interface MaterialTypeReview {
-  schemaVersion: 'material-type-review-1.0.0'
+  schemaVersion: 'material-type-review-1.0.0' | 'material-type-review-2.0.0'
   periods: MaterialTypePeriod[]
   comparisons: MaterialTypeGroup[]
   materials: Record<MaterialTypeKey, MaterialTypeRow[]>
+  ai?: AiMaterialReview | null
+}
+export type AiMaterialKey = 'ai' | 'business' | 'department'
+export interface AiMaterialGroup { key: AiMaterialKey; metrics: Record<MetricKey, NumericResult> }
+export interface AiMaterialReview {
+  periods: (Omit<MaterialTypePeriod, 'groups'> & { groups: AiMaterialGroup[] })[]
+  comparisons: AiMaterialGroup[]
+  materials?: { business: MaterialTypeRow[]; department: MaterialTypeRow[] } | null
+}
+export interface MaterialTypeSelection {
+  query: MaterialTypeQuery
+  result: MaterialTypeReview
+  refreshedAt: string
 }
 
 export interface ReviewMaterialRow extends MaterialRow {

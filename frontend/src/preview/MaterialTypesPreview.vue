@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import App from '../App.vue'
 import { SyntheticMockAdapter } from '../adapters/syntheticMockAdapter'
-import { validateReviewResponse } from '../adapters/httpDashboardAdapter'
+import { validateMaterialTypeResponse, validateReviewResponse } from '../adapters/httpDashboardAdapter'
 import type { DashboardDataAdapter } from '../adapters/dashboardAdapter'
 import type { PeriodPreferences } from '../adapters/periodPreferences'
 import type { ProjectModule, ReviewQuery } from '../domain/dashboard'
@@ -26,6 +26,17 @@ const adapter: DashboardDataAdapter = {
     if (!response.ok) throw new Error(raw.error ?? '本地计算服务暂不可用')
     if (raw.evidenceKind !== 'SYNTHETIC' || raw.projectId !== projectId) throw new Error('验收页面仅允许当前项目的合成数据')
     return {...validateReviewResponse({...raw,evidenceKind:'CURRENT_FACTS'}),evidenceKind:'SYNTHETIC'}
+  },
+  async fetchMaterialTypes(projectId,query) {
+    if (projectId !== project.id) throw new Error('合成预览项目不存在')
+    const params = new URLSearchParams({currentStart:query.current.start,currentEnd:query.current.end,
+      currentTestStart:query.currentTest.start,currentTestEnd:query.currentTest.end,
+      previousStart:query.previous.start,previousEnd:query.previous.end,
+      previousTestStart:query.previousTest.start,previousTestEnd:query.previousTest.end})
+    const response = await fetch(`http://127.0.0.1:18082/material-types?${params}`,{signal:AbortSignal.timeout(15000)})
+    const raw = await response.json()
+    if (!response.ok || raw.evidenceKind !== 'SYNTHETIC') throw new Error('本地素材类型查询未完成，请检查日期。')
+    return validateMaterialTypeResponse({...raw,evidenceKind:'CURRENT_FACTS'},projectId,query)
   },
 }
 const defaults:ReviewQuery = {current:{start:'2026-01-01',end:'2026-01-10'},previous:{start:'2025-12-22',end:'2025-12-31'}}

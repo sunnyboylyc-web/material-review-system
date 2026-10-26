@@ -47,11 +47,34 @@ public final class DashboardModels {
         }
     }
     public record MaterialTypePeriod(String key, DateRange range, Coverage coverage, List<Group> groups,
-                                     int excludedUndatedMaterials, int unresolvedDateMaterials) { }
+                                     int excludedUndatedMaterials, int unresolvedDateMaterials,
+                                     @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+                                     DateRange testRange) {
+        public MaterialTypePeriod(String key, DateRange range, Coverage coverage, List<Group> groups,
+                                  int excludedUndatedMaterials, int unresolvedDateMaterials) {
+            this(key, range, coverage, groups, excludedUndatedMaterials, unresolvedDateMaterials, null);
+        }
+    }
+    public record MaterialTypeAnalysis(String schemaVersion, String projectId, String evidenceKind,
+                                       String requestedAt, String snapshotFingerprint, MaterialTypeReview analysis) { }
     public record MaterialTypeRow(int rank, String materialId, String materialName, CreationDate creationDate,
                                   Map<String, Result> metrics, Result previousSpend, List<DailySpend> dailySpend) { }
     public record MaterialTypeReview(String schemaVersion, List<MaterialTypePeriod> periods,
-                                     List<Group> comparisons, Map<String, List<MaterialTypeRow>> materials) { }
+                                     List<Group> comparisons, Map<String, List<MaterialTypeRow>> materials,
+                                     @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+                                     AiMaterialReview ai) {
+        public MaterialTypeReview(String schemaVersion, List<MaterialTypePeriod> periods,
+                                  List<Group> comparisons, Map<String, List<MaterialTypeRow>> materials) {
+            this(schemaVersion, periods, comparisons, materials, null);
+        }
+    }
+    public record AiMaterialReview(List<MaterialTypePeriod> periods, List<Group> comparisons,
+                                   @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+                                   Map<String, List<MaterialTypeRow>> materials) {
+        public AiMaterialReview(List<MaterialTypePeriod> periods, List<Group> comparisons) {
+            this(periods, comparisons, null);
+        }
+    }
     public record TopDay(LocalDate date, String availability) { }
     public record DailySpend(LocalDate date, Result spend) { }
     public record TopRow(int rank, String materialId, String materialName, List<DailySpend> dailySpend,

@@ -104,10 +104,36 @@ public final class DashboardCalculator {
     /** Additive type analysis; reuse the verified immutable dimensions and bounded material summaries. */
     public Review reviewWithMaterialTypesPrepared(PreparedSnapshot snapshot, String projectId,
                                                   DateRange current, DateRange previous, int limit) {
+        return reviewWithMaterialTypesPrepared(snapshot, projectId, current, previous, limit, false);
+    }
+
+    public Review reviewWithEnhancedMaterialTypesPrepared(PreparedSnapshot snapshot, String projectId,
+                                                  DateRange current, DateRange previous, int limit) {
+        return reviewWithMaterialTypesPrepared(snapshot, projectId, current, previous, limit, true);
+    }
+
+    private Review reviewWithMaterialTypesPrepared(PreparedSnapshot snapshot, String projectId,
+                                                  DateRange current, DateRange previous, int limit, boolean enhanced) {
         Review base = reviewPrepared(snapshot, projectId, current, previous, limit);
+        MaterialTypeReview types = materialTypesPrepared(snapshot, projectId, current, current, previous, previous, enhanced);
+        return new Review(base.schemaVersion(), base.projectId(), base.evidenceKind(), base.requestedAt(),
+                base.topComparisonDisplayLimit(), base.periods(), base.metricsState(), base.comparisons(),
+                base.newMaterials(), base.topMaterials(), base.snapshotFingerprint(), base.cohortMaterials(), types);
+    }
+
+    /** Independent 05/06 statistics; date filters reuse the existing immutable index. */
+    public MaterialTypeReview materialTypesPrepared(PreparedSnapshot snapshot, String projectId,
+            DateRange current, DateRange currentTest, DateRange previous, DateRange previousTest) {
+        return materialTypesPrepared(snapshot, projectId, current, currentTest, previous, previousTest, true);
+    }
+
+    private MaterialTypeReview materialTypesPrepared(PreparedSnapshot snapshot, String projectId,
+            DateRange current, DateRange currentTest, DateRange previous, DateRange previousTest, boolean custom) {
+        validateProject(projectId);
+        validateRange(current); validateRange(currentTest); validateRange(previous); validateRange(previousTest);
         Index index = new Index(snapshot);
-        TypeCalculation now = materialTypePeriod(index, "CURRENT", current);
-        TypeCalculation before = materialTypePeriod(index, "PREVIOUS", previous);
+        TypeCalculation now = materialTypePeriod(index, "CURRENT", current, currentTest);
+        TypeCalculation before = materialTypePeriod(index, "PREVIOUS", previous, previousTest);
         List<Group> comparisons = new ArrayList<>();
         Map<String, List<MaterialTypeRow>> materials = new LinkedHashMap<>();
         for (int group = 0; group < TYPE_KEYS.size(); group++) {
@@ -132,18 +158,91 @@ public final class DashboardCalculator {
             }
             materials.put(key, List.copyOf(rows));
         }
-        MaterialTypeReview types = new MaterialTypeReview("material-type-review-1.0.0",
-                List.of(now.period, before.period), List.copyOf(comparisons), Map.copyOf(materials));
-        return new Review(base.schemaVersion(), base.projectId(), base.evidenceKind(), base.requestedAt(),
-                base.topComparisonDisplayLimit(), base.periods(), base.metricsState(), base.comparisons(),
-                base.newMaterials(), base.topMaterials(), base.snapshotFingerprint(), base.cohortMaterials(), types);
+        return new MaterialTypeReview(custom ? "material-type-review-2.0.0" : "material-type-review-1.0.0",
+                List.of(now.period, before.period), List.copyOf(comparisons), Map.copyOf(materials),
+                custom ? aiReview(index, now, before) : null);
+    }
+
+    private static final List<String> AI_KEYS = List.of("ai", "business", "department");
+    private static final java.util.regex.Pattern AI_MARKER = java.util.regex.Pattern.compile("AI(?!R)", java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    /** AI is an overlapping observation, never a replacement for original/mixed/other. */
+    private static AiMaterialReview aiReview(Index index, TypeCalculation now, TypeCalculation before) {
+        MaterialTypePeriod current = aiPeriod(index, now), previous = aiPeriod(index, before);
+        List<Group> comparisons = new ArrayList<>();
+        for (int i = 0; i < AI_KEYS.size(); i++) {
+            Map<String, Result> compared = new LinkedHashMap<>();
+            for (String key : METRIC_KEYS) {
+                Result a = current.groups().get(i).metrics().get(key), b = previous.groups().get(i).metrics().get(key);
+                compared.put(key, inherited(MetricArithmetic.comparisonIndex(a.value(), b.value()), a, b));
+            }
+            comparisons.add(new Group(AI_KEYS.get(i), Map.copyOf(compared)));
+        }
+        Map<String, List<MaterialTypeRow>> materials = new LinkedHashMap<>();
+        Totals aiTotal = aiTotals(index, now);
+        for (String key : List.of("business", "department")) {
+            List<MaterialTypeRow> rows = new ArrayList<>();
+            for (String id : ranked(now.byMaterial)) {
+                String name = index.name(id, now.period.range().end());
+                if (!aiMember(name, key)) continue;
+                Totals prior = before.byMaterial.get(id);
+                if (prior == null) prior = new Totals(List.of(), before.period.coverage().coveredDays() > 0,
+                        !before.period.coverage().state().equals("COMPLETE"));
+                rows.add(new MaterialTypeRow(rows.size() + 1, id, name,
+                        index.creationDate(id, now.period.range().end()), now.byMaterial.get(id).metrics(aiTotal),
+                        prior.numberField(Field.SPEND), index.dailySpend(id, now.period.range())));
+            }
+            materials.put(key, List.copyOf(rows));
+        }
+        return new AiMaterialReview(List.of(current, previous), List.copyOf(comparisons), Map.copyOf(materials));
+    }
+
+    private static boolean aiMember(String name, String key) {
+        return name != null && AI_MARKER.matcher(name).find() &&
+                (key.equals("ai") || name.contains(key.equals("business") ? "商单" : "部门"));
+    }
+
+    private static Totals aiTotals(Index index, TypeCalculation base) {
+        Summary summary = new Summary();
+        for (String id : base.byMaterial.keySet()) {
+            if (aiMember(index.name(id, base.period.range().end()), "ai"))
+                summary.merge(index.prepared.series.get(id).aggregate(base.period.range()));
+        }
+        return new Totals(summary, base.period.coverage().coveredDays() > 0,
+                !base.period.coverage().state().equals("COMPLETE"));
+    }
+
+    private static MaterialTypePeriod aiPeriod(Index index, TypeCalculation base) {
+        DateRange range = base.period.range(); Coverage coverage = base.period.coverage();
+        Map<String, Summary> sums = new LinkedHashMap<>(); AI_KEYS.forEach(key -> sums.put(key, new Summary()));
+        for (String id : base.byMaterial.keySet()) {
+            String name = index.name(id, range.end());
+            if (!aiMember(name, "ai")) continue;
+            Summary summary = index.prepared.series.get(id).aggregate(range);
+            sums.get("ai").merge(summary);
+            if (name.contains("商单")) sums.get("business").merge(summary);
+            if (name.contains("部门")) sums.get("department").merge(summary);
+        }
+        boolean covered = coverage.coveredDays() > 0, partialDays = !coverage.state().equals("COMPLETE");
+        Totals overall = new Totals(sums.get("ai"), covered, partialDays);
+        boolean unknownName = base.period.groups().stream().anyMatch(group ->
+                group.metrics().values().stream().anyMatch(value -> value.partialReasons().contains("MISSING_MATERIAL_NAME")));
+        List<Group> groups = new ArrayList<>();
+        for (String key : AI_KEYS) {
+            Map<String, Result> metrics = new LinkedHashMap<>(new Totals(sums.get(key), covered, partialDays).metrics(overall));
+            if (unknownName) metrics.replaceAll((metric, value) -> partial(value, "MISSING_MATERIAL_NAME"));
+            if (base.period.unresolvedDateMaterials() > 0) metrics.replaceAll((metric, value) -> partial(value, "COHORT_UNASSIGNED"));
+            groups.add(new Group(key, Map.copyOf(metrics)));
+        }
+        return new MaterialTypePeriod(base.period.key(), range, coverage, List.copyOf(groups),
+                base.period.excludedUndatedMaterials(), base.period.unresolvedDateMaterials(), base.period.testRange());
     }
 
     private static final List<String> TYPE_KEYS = List.of("original", "mixed", "other");
     private record TypeCalculation(MaterialTypePeriod period, Map<String, Totals> byMaterial,
                                    Map<String, String> types, Totals overall) { }
 
-    private static TypeCalculation materialTypePeriod(Index index, String key, DateRange range) {
+    private static TypeCalculation materialTypePeriod(Index index, String key, DateRange range, DateRange testRange) {
         Coverage coverage = index.coverage(range);
         boolean covered = coverage.coveredDays() > 0, partialDays = !coverage.state().equals("COMPLETE");
         // Range-index lookup only. No scan of all historical rows to rediscover names/first dates.
@@ -159,7 +258,7 @@ public final class DashboardCalculator {
         for (String id : candidates) {
             CreationDate creation = index.creationDate(id, range.end());
             if (creation.status().equals("VERIFIED") &&
-                    (creation.date().isBefore(range.start()) || creation.date().isAfter(range.end()))) continue;
+                    (creation.date().isBefore(testRange.start()) || creation.date().isAfter(testRange.end()))) continue;
             Summary summary = index.prepared.series.get(id).aggregate(range);
             if (summary.eligibleCount == 0 && !summary.unknownSpend) continue;
             if (creation.status().equals("NOT_APPLICABLE")) { undated++; continue; }
@@ -182,7 +281,7 @@ public final class DashboardCalculator {
             if (unresolved > 0) metrics.replaceAll((metric, value) -> partial(value, "COHORT_UNASSIGNED"));
             groups.add(new Group(type, Map.copyOf(metrics)));
         }
-        return new TypeCalculation(new MaterialTypePeriod(key, range, coverage, List.copyOf(groups), undated, unresolved),
+        return new TypeCalculation(new MaterialTypePeriod(key, range, coverage, List.copyOf(groups), undated, unresolved, range.equals(testRange) ? null : testRange),
                 Map.copyOf(totals), Map.copyOf(types), overall);
     }
 

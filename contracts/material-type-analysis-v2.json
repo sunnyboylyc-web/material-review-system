@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "material-type-analysis-1.0.0",
+  "analysisVersion": "material-type-review-2.0.0",
+  "endpoint": "GET /api/projects/{projectId}/material-types",
+  "scope": "Read-only calculation for sections 05 and 06. Does not change sections 01-04, stored facts, collection, or database schema.",
+  "ranges": {
+    "current": "Inclusive statistic dates for current spend and metrics.",
+    "currentTest": "Inclusive first-delivery dates for the current material cohort.",
+    "previous": "Inclusive statistic dates for previous spend and metrics.",
+    "previousTest": "Inclusive first-delivery dates for the previous material cohort.",
+    "defaults": "Each statistic range defaults to its corresponding project review range; each test range initially equals that statistic range. Changes apply on the dedicated refresh only.",
+    "asOf": "Material name and first-delivery date use the existing dimension change point as of that statistic range end. No future observations. Coverage describes statistic dates, not test dates.",
+    "limits": "Each range is ordered, valid, and contains at most 3660 days; HTTP dates are restricted to years 1900-2200."
+  },
+  "primaryTypes": {
+    "original": "Name contains 原创, taking priority over 混剪.",
+    "mixed": "Name contains 混剪 and does not contain 原创.",
+    "other": "All remaining eligible material records. Does not require the literal word 其他."
+  },
+  "aiObservation": {
+    "matching": "Case-insensitive regular expression AI(?!R). Exclude an AI occurrence immediately followed by R; any other valid occurrence still qualifies the material. AIGC qualifies, AIR/FAIR alone do not.",
+    "overlap": "AI is an independent overlay of original/mixed/other, not a fourth mutually exclusive type. Never subtract AI from the original three types.",
+    "business": "Within AI, name contains 商单.",
+    "department": "Within AI, name contains 部门.",
+    "both": "Count in both business and department, once per group. Do not sum them to recreate the AI total.",
+    "neither": "Retain in AI total and omit from both subgroups.",
+    "metrics": "Spend, ROI, distinct eligible material count, CTR, CVR, CPM, CPC, plus internal spend share; retain the original positive-spend eligibility, ZZ count exclusion, paired ratio populations, zero denominator and unknown/partial rules.",
+    "materials": "Optional additive ai.materials map with business and department arrays of MaterialTypeRow. Each independently ranks current-period qualified materials by spend with the existing ID tie-break. Uses the same as-of name and both date windows as subgroup totals. A material may appear once in each subgroup; absent map in older v2 results means unavailable detail, not computed empty. Previous spend is the same ID qualified by the independent previous windows, daily spend covers current statistic dates. Detail spend share uses the AI total."
+  },
+  "calculation": "Reuse the account/version-bound immutable prepared snapshot, as-of dimensions and monthly per-material summaries. Only boundary month facts and selected-range candidates are read. No historical full scan to rediscover first dates.",
+  "topDetailLimit": "Overall comparison chart remains TOP10. Its dialog defaults to 10 and permits 1-200 like new/historical dialogs. Additional rows are queried without overwriting the displayed overall review, and must match project, dates and snapshot fingerprint. Ignore stale responses after close/project/result changes.",
+  "detailInteraction": "Other opens the shared material dialog. AI business/department each open the same dialog over their parent breakdown; closing detail returns to its card. Original, mixed, other, business and department each retain independent 1-200 display limits, default 10; limits never alter aggregates.",
+  "structureReference": "Two read-only controls on the daily download dialog show an Excel-style Chinese business projection with column letters and row numbers, using synthetic examples only. Dimension rows represent project/material attributes; summary rows represent project/material/month. Summary material names are joined from dimension and ratios are derived display columns. Actual DimensionPoint/MaterialSeries.months/Summary field descriptions remain in collapsed maintenance details. These are existing in-memory indexes, not new physical MySQL tables.",
+  "dateNavigation": "Shared range picker has previous/next year and month controls. Navigation changes only the visible two calendar months, never committed dates; retain year bounds, leap-day validation and explicit date selection/confirmation.",
+  "compatibility": "Legacy material-type-review-1.0.0 blocks and saved results remain readable. Null new ai/testRange record fields are omitted. Enhanced default review and independent endpoint emit v2. Older saved blocks do not fabricate AI totals; refresh explicitly.",
+  "deployment": "Local preview first. Production change requires explicit user visual acceptance and must be after 12:00 Asia/Shanghai. Public publication follows production acceptance only."
+}

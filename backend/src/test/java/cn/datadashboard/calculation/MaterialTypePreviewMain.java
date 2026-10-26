@@ -17,14 +17,14 @@ public final class MaterialTypePreviewMain {
         for (int i = 1; i <= 14; i++) {
             LocalDate first = LocalDate.of(2026, 1, 1 + (i % 8));
             for (LocalDate d = first; !d.isAfter(LocalDate.of(2026, 1, 15)); d = d.plusDays(1)) {
-                facts.add(row(d, "O" + i, "原创 · 场景演示 " + i, first, 25 + i * 3 + d.getDayOfMonth(), 2.6));
-                facts.add(row(d, "M" + i, "混剪 · 产品展示 " + i, first, 16 + i * 2 + d.getDayOfMonth(), 2.1));
+                facts.add(row(d, "O" + i, "原创 · 场景演示 " + i + (i % 4 == 0 ? " AIR" : i % 4 == 1 ? " AI 商单" : i % 4 == 2 ? " ai 部门" : " AI 商单 部门"), first, 25 + i * 3 + d.getDayOfMonth(), 2.6));
+                facts.add(row(d, "M" + i, "混剪 · 产品展示 " + i + (i % 3 == 0 ? " AI 部门" : ""), first, 16 + i * 2 + d.getDayOfMonth(), 2.1));
             }
         }
         for (int i = 1; i <= 4; i++) {
             LocalDate first = LocalDate.of(2026, 1, i == 4 ? 10 : i);
             for (LocalDate d = first; !d.isAfter(LocalDate.of(2026, 1, 15)); d = d.plusDays(1))
-                facts.add(row(d, "X" + i, i == 1 ? "AI 产品演示" : "星图 · 实拍 " + i, first, 20 + i * 7, 1.8));
+                facts.add(row(d, "X" + i, i == 1 ? "AIGC 商单产品演示" : i == 2 ? "AIR 实拍演示" : i == 3 ? "AI 无标签演示" : "AIR-AI 部门演示", first, 20 + i * 7, 1.8));
         }
         for (LocalDate d = LocalDate.of(2025, 12, 20); !d.isAfter(LocalDate.of(2026, 1, 15)); d = d.plusDays(1)) {
             facts.add(row(d, "OLD", "原创 · 周期前老素材（筛除）", LocalDate.of(2025, 12, 20), 400, 3));
@@ -61,11 +61,33 @@ public final class MaterialTypePreviewMain {
                 DateRange previous = new DateRange(LocalDate.parse(p.get("previousStart")),LocalDate.parse(p.get("previousEnd")));
                 if (java.time.temporal.ChronoUnit.DAYS.between(current.start(),current.end()) > 366 || java.time.temporal.ChronoUnit.DAYS.between(previous.start(),previous.end()) > 366) throw new IllegalArgumentException();
                 int limit = Integer.parseInt(p.getOrDefault("limit","20"));
-                Review r = calculator.reviewWithMaterialTypesPrepared(prepared,"synthetic-type-preview",current,previous,limit);
+                Review r = calculator.reviewWithEnhancedMaterialTypesPrepared(prepared,"synthetic-type-preview",current,previous,limit);
                 body = mapper.writeValueAsBytes(new Review(r.schemaVersion(),r.projectId(),"SYNTHETIC",r.requestedAt(),r.topComparisonDisplayLimit(),r.periods(),r.metricsState(),r.comparisons(),r.newMaterials(),r.topMaterials(),r.snapshotFingerprint(),r.cohortMaterials(),r.materialTypes()));
             } catch (Exception e) {
                 status = 400; body = "{\"error\":\"请检查周期日期，单个周期不得超过367天\"}".getBytes(StandardCharsets.UTF_8);
             }
+            exchange.getResponseHeaders().set("Content-Type","application/json; charset=utf-8");
+            exchange.getResponseHeaders().set("Cache-Control","no-store");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin","http://127.0.0.1:5186");
+            exchange.sendResponseHeaders(status,body.length);
+            try (var out = exchange.getResponseBody()) { out.write(body); }
+        });
+        server.createContext("/material-types", exchange -> {
+            byte[] body; int status = 200;
+            try {
+                if (!"GET".equals(exchange.getRequestMethod())) throw new IllegalArgumentException();
+                Map<String,String> p = new HashMap<>();
+                for (String pair : Objects.requireNonNull(exchange.getRequestURI().getRawQuery()).split("&")) {
+                    String[] kv = pair.split("=",2); p.put(kv[0],URLDecoder.decode(kv[1],StandardCharsets.UTF_8));
+                }
+                DateRange current = new DateRange(LocalDate.parse(p.get("currentStart")),LocalDate.parse(p.get("currentEnd")));
+                DateRange currentTest = new DateRange(LocalDate.parse(p.get("currentTestStart")),LocalDate.parse(p.get("currentTestEnd")));
+                DateRange previous = new DateRange(LocalDate.parse(p.get("previousStart")),LocalDate.parse(p.get("previousEnd")));
+                DateRange previousTest = new DateRange(LocalDate.parse(p.get("previousTestStart")),LocalDate.parse(p.get("previousTestEnd")));
+                body = mapper.writeValueAsBytes(new MaterialTypeAnalysis("material-type-analysis-1.0.0", "synthetic-type-preview", "SYNTHETIC",
+                    java.time.Instant.now().toString(), prepared.fingerprint(),
+                    calculator.materialTypesPrepared(prepared,"synthetic-type-preview",current,currentTest,previous,previousTest)));
+            } catch (Exception failure) { status = 400; body = "{\"error\":\"INVALID_SYNTHETIC_QUERY\"}".getBytes(StandardCharsets.UTF_8); }
             exchange.getResponseHeaders().set("Content-Type","application/json; charset=utf-8");
             exchange.getResponseHeaders().set("Cache-Control","no-store");
             exchange.getResponseHeaders().set("Access-Control-Allow-Origin","http://127.0.0.1:5186");

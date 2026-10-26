@@ -48,12 +48,19 @@ public final class OperationsFileStore {
         try (var paths = Files.list(root)) {
             for (Path p : paths.filter(p -> p.getFileName().toString().matches("[a-f0-9]{32}\\.json")).toList()) {
                 Entry e = read(p.getFileName().toString().substring(0,32));
-                if (!e.status().equals("READY") && !e.status().equals("DELETING")) e = new Entry(e.id(),e.name(),e.bytes(),Files.size(Files.exists(path(e.id(),".bin")) ? path(e.id(),".bin") : path(e.id(),".part")),e.status().equals("VERIFYING") && !verifying.contains(e.id()) ? "INTERRUPTED" : e.status(),"",e.createdAt());
+                if (!e.status().equals("READY") && !e.status().equals("DELETING")) e = new Entry(e.id(),e.name(),e.bytes(),receivedBytes(e.id()),e.status().equals("VERIFYING") && !verifying.contains(e.id()) ? "INTERRUPTED" : e.status(),"",e.createdAt());
                 result.add(e);
             }
         }
         result.sort(Comparator.comparing(Entry::createdAt).reversed());
         return result;
+    }
+    private long receivedBytes(String id) throws IOException {
+        // Verification atomically moves .part to .bin before publishing READY.
+        // Open the old path directly, then the new path; an exists/size pair races
+        // with that move. Missing both files still fails instead of inventing zero.
+        try { return Files.size(path(id,".part")); }
+        catch (NoSuchFileException moved) { return Files.size(path(id,".bin")); }
     }
     public synchronized Entry begin(String name, long bytes) throws IOException {
         if (name == null || name.isBlank() || name.length() > 180 || name.chars().anyMatch(c -> Character.isISOControl(c) || c=='/' || c=='\\') || bytes <= 0)

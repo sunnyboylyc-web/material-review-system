@@ -13,6 +13,7 @@ import ConfigurationPanel from './components/ConfigurationPanel.vue'
 import AdminAccountsPanel from './components/AdminAccountsPanel.vue'
 import HistoryUploadPanel from './components/HistoryUploadPanel.vue'
 import CollectedExportPanel from './components/CollectedExportPanel.vue'
+import CalculationSchemaViewer from './components/CalculationSchemaViewer.vue'
 import FileStoragePanel from './components/FileStoragePanel.vue'
 import DatabaseBackupPanel from './components/DatabaseBackupPanel.vue'
 import CollectionOperationsPanel from './components/CollectionOperationsPanel.vue'
@@ -31,7 +32,7 @@ import type { DashboardDataAdapter } from './adapters/dashboardAdapter'
 import { httpDashboardAdapter } from './adapters/httpDashboardAdapter'
 import { MAX_DISPLAY_ROWS } from './domain/dashboard'
 import { PROJECT_CATEGORIES, type ProjectCategory } from './domain/projectCategory'
-import type { ProjectModule, ReviewQuery, ReviewResult, TopResult } from './domain/dashboard'
+import type { MaterialTypeQuery, MaterialTypeReview, MaterialTypeSelection, ProjectModule, ReviewQuery, ReviewResult, TopResult } from './domain/dashboard'
 import { formatCreationDate, formatMaterialLabel } from './domain/formatting'
 import { defaultDateSelection, shiftIsoDate, shanghaiIsoDate } from './time/shanghai'
 import { httpPeriodPreferences, type PeriodPreferences } from './adapters/periodPreferences'
@@ -59,6 +60,7 @@ const isSynthetic = computed(() => adapter.evidenceKind === 'SYNTHETIC'
 const privateOperationsPreview = computed(() => isSynthetic.value || props.localReadOnlyPreview === true || !props.session)
 const defaults = defaultDateSelection()
 const projects = ref<ProjectModule[]>([])
+const materialTypeSelections = ref<Record<string, MaterialTypeSelection>>({})
 const categoryExpanded = ref<Record<ProjectCategory, boolean>>({ LARGE_APPLIANCE: true, SMALL_APPLIANCE: true, OTHER: true })
 const categoryGroups = computed(() => PROJECT_CATEGORIES.map(category => ({ ...category,
   projects: projects.value.filter(project => (project.category ?? 'OTHER') === category.id),
@@ -395,6 +397,29 @@ function validateRange(label: string, start: string, end: string): string {
   const days = (Date.parse(end) - Date.parse(start)) / 86400000 + 1
   if (!Number.isFinite(days) || days > 3660) return `${label}日期范围须有效且不超过 3660 天。`
   return ''
+}
+
+async function loadMaterialTypes(query: MaterialTypeQuery): Promise<MaterialTypeReview> {
+  const projectId = selectedProjectId.value
+  if (!adapter.fetchMaterialTypes) throw new Error('当前数据入口暂不支持独立素材类型查询。')
+  const result = await adapter.fetchMaterialTypes(projectId, query)
+  if (projectId !== selectedProjectId.value) throw new Error('项目已切换，请重新刷新素材类型数据。')
+  return result
+}
+
+async function loadReviewOverallMaterials(limit: number): Promise<ReviewResult['topMaterials']> {
+  const source = reviewResult.value, projectId = selectedProjectId.value
+  if (!source || !Number.isInteger(limit) || limit < 1 || limit > MAX_DISPLAY_ROWS) throw new Error('请选择有效的明细显示数量。')
+  const query = {
+    current: { ...source.periods.find(period => period.key === 'CURRENT')!.range },
+    previous: { ...source.periods.find(period => period.key === 'PREVIOUS')!.range },
+  }
+  const result = await adapter.fetchReview(projectId, query, limit)
+  if (selectedProjectId.value !== projectId || reviewResult.value !== source) throw new Error('项目或周期已变化，请重新打开素材明细。')
+  if (!reviewResultMatches(result, projectId, query, limit) || result.snapshotFingerprint !== source.snapshotFingerprint) {
+    throw new Error('数据版本或查询条件已变化，请先刷新周期数据后再查看更多素材。')
+  }
+  return result.topMaterials
 }
 
 async function loadReview(): Promise<void> {
@@ -783,7 +808,7 @@ onBeforeUnmount(() => {
           <p v-else-if="!reviewLoading" class="module-note" role="status">点击“刷新数据”查看已入库数据，不会启动采集。</p>
 
           <div v-if="!reviewResult" class="analysis-empty" :aria-busy="reviewLoading"><ConstellationGlyph :kind="1"/><p class="overline">PERIOD COMPARISON</p><h4>{{ reviewLoading ? '正在整理周期表现…' : '把两个周期，放在一起看。' }}</h4><p>选择本期与上期日期，点击“刷新数据”。<br>整体表现、素材构成与 TOP 对比将在这里展开。</p><div class="empty-stage-labels"><span>01 整体表现</span><span>02 素材构成</span><span>03 分类对比</span></div></div>
-          <PeriodReview v-if="reviewResult" :result="reviewResult" :project-name="selectedProject.name" />
+          <PeriodReview v-if="reviewResult" :key="selectedProjectId" :result="reviewResult" :project-name="selectedProject.name" :load-overall-materials="loadReviewOverallMaterials" :material-type-selection="materialTypeSelections[selectedProjectId]" :load-material-types="loadMaterialTypes" @material-type-updated="selection => materialTypeSelections[selectedProjectId] = selection" />
         </section>
 
         <section v-show="activeView === 'dashboard' && activeTab === 'top'" class="panel daily-panel" aria-labelledby="top-title">
@@ -863,7 +888,7 @@ onBeforeUnmount(() => {
                   </div>
                   <div class="selected-curve-heading"><strong>近 7 天消耗走势</strong><span>近 7 天 ROI <MetricValue :result="selectedMaterial.windowRoi" /></span></div>
                   <SpendCurve :days="selectedMaterial.dailySpend" expanded />
-                  
+
       </template>
                 <p v-else class="module-note selected-material-empty">{{ topEmptyMessage }}</p>
               </section>
@@ -905,7 +930,7 @@ onBeforeUnmount(() => {
           </div>
         </section>
         <dialog v-if="!recoveryReadOnly" ref="downloadDialog" class="download-dialog" tabindex="-1" aria-labelledby="download-dialog-title" aria-describedby="download-dialog-notice" :aria-busy="downloadBusy" @keydown="trapDownloadsFocus" @cancel.prevent="closeDownloads" @close="downloadsClosed" @click="event=>{if(event.target===downloadDialog)closeDownloads()}">
-          <header class="download-dialog-heading"><div><p class="overline">PROJECT DATA EXPORT</p><h2 id="download-dialog-title">下载数据</h2><p>{{ selectedProject.name }} · 选择范围，保留每一份数据</p></div><button ref="downloadCloseButton" type="button" class="icon-button" aria-label="关闭下载数据面板" :disabled="downloadBusy" @click="closeDownloads"><UiIcon name="close"/></button></header>
+          <header class="download-dialog-heading"><div><p class="overline">PROJECT DATA EXPORT</p><h2 id="download-dialog-title">下载数据</h2><p>{{ selectedProject.name }} · 选择范围，保留每一份数据</p></div><div class="download-reference-actions"><button ref="downloadCloseButton" type="button" class="icon-button" aria-label="关闭下载数据面板" :disabled="downloadBusy" @click="closeDownloads"><UiIcon name="close"/></button><CalculationSchemaViewer :disabled="downloadBusy"/></div></header>
           <p id="download-dialog-notice" class="download-attention" role="status">{{ downloadBusy ? '正在处理，请勿关闭面板、刷新页面或重复提交。完成前关闭按钮、Esc 和遮罩暂不可用，请等待结果。' : '请先核对可下载范围再生成文件；处理期间请保持本页打开，完成后可关闭面板。' }}</p>
           <p v-if="props.localReadOnlyPreview" class="download-attention">{{ isSynthetic ? '当前仅演示虚构数据的下载界面，不读取真实下载范围，不生成文件。' : '只读预览可核对真实下载范围；生成 Excel 会写入临时文件，本入口已禁用。' }}</p>
           <CollectedExportPanel :project-id="selectedProjectId" :active="downloadOpen" :projects="projects" @busy="setDownloadBusy" @select-project="chooseExportProject" :adapter="props.collectedExportAdapter" :read-only="!props.collectedExportAdapter && (props.historyReadOnly || isSynthetic)" :download-disabled="isSynthetic || props.localReadOnlyPreview" :download-disabled-message="props.localReadOnlyPreview ? (isSynthetic ? '仅为虚构数据演示；隔离只读预览不生成文件。' : '以上为本地已保存数据的范围；只读预览不生成文件。') : undefined"/>
@@ -920,6 +945,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .download-attention { color: var(--danger, #b42318); line-height: 1.6; margin: 20px 32px 0; }
 .download-dialog .icon-button:disabled { opacity: .5; cursor: not-allowed; }
+.download-reference-actions { display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end; }
+.download-reference-actions > .icon-button { order:2; }
 .workspace-intro { justify-content:flex-end; }
 .workspace-intro:has(p) { justify-content:space-between; }
 @media(max-width:540px) { .user-avatar { display:grid; } }

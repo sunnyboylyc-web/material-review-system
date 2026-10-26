@@ -68,7 +68,7 @@ describe('period review v2', () => {
     expect(wrapper.get('.pr-column-item').text()).toContain('虚构素材0')
     expect(wrapper.findAll('.pr-group')).toHaveLength(2)
     await wrapper.get('.pr-column-item').trigger('click');await flushPromises()
-    expect(wrapper.get('#pr-dialog-title').text()).toContain('整体 TOP10')
+    expect(wrapper.get('#pr-dialog-title').text()).toContain('整体素材')
     expect(wrapper.find('.pr-dialog-summary').exists()).toBe(false)
     expect(wrapper.get('.pr-detail-table th').text()).toBe('本期素材')
     expect(wrapper.get('.pr-detail-table').text()).toContain('创建日期缺失')

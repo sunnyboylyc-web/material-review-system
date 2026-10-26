@@ -78,12 +78,28 @@ public final class DashboardController {
             var input = prepared.apply(account);
             if (input == null || !account.equals(input.snapshot().accountId()))
                 throw new IllegalStateException("FACT_QUERY_UNAVAILABLE");
-            return calculator.reviewWithMaterialTypesPrepared(input, projectId, current, previous, limit);
+            return calculator.reviewWithEnhancedMaterialTypesPrepared(input, projectId, current, previous, limit);
         }
         var snapshot = snapshots.apply(account);
         if (snapshot == null || !account.equals(snapshot.accountId()))
             throw new IllegalStateException("FACT_QUERY_UNAVAILABLE");
-        return calculator.reviewWithMaterialTypesPrepared(DashboardCalculator.prepare(snapshot), projectId, current, previous, limit);
+        return calculator.reviewWithEnhancedMaterialTypesPrepared(DashboardCalculator.prepare(snapshot), projectId, current, previous, limit);
+    }
+
+    @GetMapping("/projects/{projectId}/material-types")
+    public DashboardModels.MaterialTypeAnalysis materialTypes(@PathVariable String projectId,
+            @RequestParam String currentStart, @RequestParam String currentEnd,
+            @RequestParam String currentTestStart, @RequestParam String currentTestEnd,
+            @RequestParam String previousStart, @RequestParam String previousEnd,
+            @RequestParam String previousTestStart, @RequestParam String previousTestEnd) {
+        String account = directory.account(projectId);
+        var current = range(currentStart, currentEnd); var currentTest = range(currentTestStart, currentTestEnd);
+        var previous = range(previousStart, previousEnd); var previousTest = range(previousTestStart, previousTestEnd);
+        var input = prepared != null ? prepared.apply(account) : DashboardCalculator.prepare(snapshots.apply(account));
+        if (input == null || !account.equals(input.snapshot().accountId())) throw new IllegalStateException("FACT_QUERY_UNAVAILABLE");
+        return new DashboardModels.MaterialTypeAnalysis("material-type-analysis-1.0.0", projectId, "CURRENT_FACTS",
+                java.time.Instant.now().toString(), input.fingerprint(),
+                calculator.materialTypesPrepared(input, projectId, current, currentTest, previous, previousTest));
     }
 
     @GetMapping("/projects/{projectId}/top")

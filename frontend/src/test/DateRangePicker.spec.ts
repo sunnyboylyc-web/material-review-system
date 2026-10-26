@@ -5,6 +5,35 @@ import {presetRange,validRange} from '../time/ranges'
 import {comparisonClass} from '../domain/comparison'
 const value={start:'2026-10-01',end:'2026-10-07'}
 describe('period range picker',()=>{
+ it('navigates years and months without committing, then selects across a year boundary',async()=>{
+  const wrapper=mount(DateRangePicker,{props:{modelValue:{start:'2026-12-01',end:'2026-12-07'},label:'本周期'}})
+  await wrapper.get('[aria-label="本周期开始日期"]').trigger('click')
+  await wrapper.get('[aria-label="上一年"]').trigger('click')
+  expect(wrapper.get('.range-calendar strong').text()).toBe('2025年12月')
+  await wrapper.get('[aria-label="下一年"]').trigger('click')
+  expect(wrapper.get('.range-calendar strong').text()).toBe('2026年12月')
+  expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  await wrapper.get('[aria-label="2026-12-28"]').trigger('click')
+  await wrapper.get('[aria-label="2027-01-03"]').trigger('click')
+  expect(wrapper.emitted('confirm')).toEqual([[{start:'2026-12-28',end:'2027-01-03'}]])
+  wrapper.unmount()
+ })
+ it('keeps leap day selection separate from year navigation and disables out of bound moves',async()=>{
+  const wrapper=mount(DateRangePicker,{props:{modelValue:{start:'2024-02-01',end:'2024-02-29'},label:'本周期'}})
+  await wrapper.get('[aria-label="本周期开始日期"]').trigger('click')
+  await wrapper.get('[aria-label="下一年"]').trigger('click')
+  expect(wrapper.find('[aria-label="2025-02-29"]').exists()).toBe(false)
+  expect((wrapper.get('input[data-part="end"]').element as HTMLInputElement).value).toBe('2024-02-29')
+  expect(wrapper.emitted('confirm')).toBeUndefined(); wrapper.unmount()
+  for(const start of ['1900-01-01','2200-11-01']){
+   const w=mount(DateRangePicker,{props:{modelValue:{start,end:start},label:'周期'}})
+   await w.get('[aria-label="周期开始日期"]').trigger('click')
+   const direction=start.startsWith('1900')?'上一年':'下一年'
+   expect(w.get(`[aria-label="${direction}"]`).attributes('disabled')).toBeDefined()
+   expect(w.get(`[aria-label="${direction==='上一年'?'前一个月':'后一个月'}"]`).attributes('disabled')).toBeDefined()
+   w.unmount()
+  }
+ })
  it('keeps an empty draft uncommitted while using the committed month when switching fields',async()=>{
   const wrapper=mount(DateRangePicker,{props:{modelValue:value,label:'本周期'}})
   await wrapper.get('[aria-label="本周期开始日期"]').trigger('click')

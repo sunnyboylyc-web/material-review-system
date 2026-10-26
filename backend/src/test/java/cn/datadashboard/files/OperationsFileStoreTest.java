@@ -6,6 +6,21 @@ import java.io.*;
 import static org.junit.jupiter.api.Assertions.*;
 class OperationsFileStoreTest {
     @TempDir Path dir;
+    @Test void concurrentVerificationAndRepeatedListRemainReadable() throws Exception {
+        var store = new OperationsFileStore(dir);
+        java.util.List<String> ids = new java.util.ArrayList<>();
+        for (int i=0;i<40;i++) {
+            var entry = store.begin("synthetic-"+i,3);
+            store.chunk(entry.id(),0,new ByteArrayInputStream(new byte[]{1,2,3}));
+            ids.add(entry.id()); store.startFinish(entry.id());
+            // Listing during the asynchronous move must not follow a vanished .part.
+            for(int read=0;read<4;read++) assertEquals(ids.size(),store.list().size());
+        }
+        long deadline=System.nanoTime()+java.util.concurrent.TimeUnit.SECONDS.toNanos(10);
+        while(store.list().stream().anyMatch(entry -> !entry.status().equals("READY")) && System.nanoTime()<deadline) Thread.sleep(5);
+        assertTrue(store.list().stream().allMatch(entry -> entry.status().equals("READY")));
+        for(String id:ids) assertArrayEquals(new byte[]{1,2,3},store.open(id).readAllBytes());
+    }
     @Test void opaqueRoundTripAndDuplicateNames() throws Exception {
         var store=new OperationsFileStore(dir);
         var first=store.begin("开发备份.zip",3);

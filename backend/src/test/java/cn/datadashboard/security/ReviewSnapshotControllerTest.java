@@ -151,4 +151,31 @@ class ReviewSnapshotControllerTest {
         assertNull(restored.materialTypes());
         assertArrayEquals(bytes,json.writeValueAsBytes(restored));
     }
+
+    @Test void legacyTypeSnapshotAndEnhancedAiDetailsSurviveRestartWithoutFactReads() throws Exception {
+        var date=java.time.LocalDate.parse("2026-10-01");
+        var source=new DashboardController(projects,a->new Snapshot(a,List.of(new DayEvidence(date,1,"synthetic","SYNTHETIC")),
+                List.of(new Fact(date,"synthetic-ai","原创-ai商单部门",date,new java.math.BigDecimal("100"),
+                        new java.math.BigDecimal("300"),new java.math.BigDecimal("10000"),
+                        new java.math.BigDecimal("200"),new java.math.BigDecimal("10")))));
+        var controller=new ReviewSnapshotController(root,projects,source);
+        var saved=controller.refresh(()->"alice","p1",query);
+        assertTrue(saved.persisted());
+        var r=saved.result();assertEquals(1,r.materialTypes().ai().materials().get("business").size());
+        assertEquals("synthetic-ai",r.materialTypes().ai().materials().get("department").getFirst().materialId());
+        var restarted=new ReviewSnapshotController(root,projects,new DashboardController(projects,a->{throw new AssertionError("RESTORE_MUST_NOT_QUERY");}));
+        assertEquals(r,restarted.get(()->"alice","p1").getBody().result());
+        var types=r.materialTypes();
+        var oldPeriods=types.periods().stream().map(p->new MaterialTypePeriod(p.key(),p.range(),p.coverage(),p.groups(),p.excludedUndatedMaterials(),p.unresolvedDateMaterials())).toList();
+        var oldTypes=new MaterialTypeReview("material-type-review-1.0.0",oldPeriods,types.comparisons(),types.materials());
+        var legacy=new Review(r.schemaVersion(),r.projectId(),r.evidenceKind(),r.requestedAt(),r.topComparisonDisplayLimit(),r.periods(),r.metricsState(),r.comparisons(),r.newMaterials(),r.topMaterials(),r.snapshotFingerprint(),r.cohortMaterials(),oldTypes);
+        var json=tools.jackson.databind.json.JsonMapper.builder().enable(tools.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).build();
+        var hash=java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(json.writeValueAsBytes(legacy)));
+        var envelope=new ReviewSnapshotController.Envelope(1,PrivateUserFiles.id("alice"),"p1","1",legacy,saved.savedAt(),hash);
+        Path file;try(var paths=Files.list(root)){file=paths.findFirst().orElseThrow();}
+        new ReviewSnapshotStorage().write(file,envelope);
+        var restored=restarted.get(()->"alice","p1").getBody().result();
+        assertEquals(legacy,restored);assertNull(restored.materialTypes().ai());
+        assertNull(restored.materialTypes().periods().getFirst().testRange());
+    }
 }

@@ -5,6 +5,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DashboardControllerTest {
+    @Test void independentTypeQueryValidatesAllFourRangesBeforeReadingAndRejectsCrossAccount() {
+        var calls = new AtomicInteger();
+        var input = cn.datadashboard.calculation.DashboardCalculator.prepare(
+                new cn.datadashboard.calculation.DashboardModels.Snapshot("demo-account",java.util.List.of(),java.util.List.of()));
+        var controller = new DashboardController(ProjectDirectory.single("demo-account"), ignored -> null,
+                ignored -> { calls.incrementAndGet(); return input; });
+        var value = controller.materialTypes("sampleproject","2026-01-05","2026-01-10","2026-01-01","2026-01-04",
+                "2025-12-20","2025-12-31","2025-12-01","2025-12-19");
+        assertEquals("sampleproject",value.projectId()); assertEquals("material-type-review-2.0.0",value.analysis().schemaVersion());
+        assertEquals(1,calls.get());
+        assertThrows(IllegalArgumentException.class, () -> controller.materialTypes("sampleproject","2026-01-05","2026-01-10",
+                "2026-02-30","2026-01-04","2025-12-20","2025-12-31","2025-12-01","2025-12-19"));
+        assertEquals(1,calls.get());
+        var other = new DashboardController(ProjectDirectory.single("other-account"), ignored -> null, ignored -> input);
+        assertThrows(IllegalStateException.class, () -> other.materialTypes("sampleproject","2026-01-05","2026-01-10",
+                "2026-01-01","2026-01-04","2025-12-20","2025-12-31","2025-12-01","2025-12-19"));
+    }
     @Test void layeredTopAndReviewUsePreparedSnapshotButFreshnessKeepsItsOwnManifestRead() {
         var day = java.time.LocalDate.of(2026, 10, 8);
         var snapshot = new cn.datadashboard.calculation.DashboardModels.Snapshot("demo-account",
