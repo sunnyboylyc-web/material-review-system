@@ -99,6 +99,16 @@ export interface ReviewResult {
   snapshotFingerprint: string
 }
 
+export interface ReviewMaterials {
+  schemaVersion: 'review-materials-1.0.0'
+  projectId: string
+  evidenceKind: EvidenceKind
+  current: DateRange
+  previous: DateRange
+  snapshotFingerprint: string
+  rows: ReviewMaterialRow[]
+}
+
 export type MaterialTypeKey = 'original' | 'mixed' | 'other'
 export interface MaterialTypeGroup {
   key: MaterialTypeKey

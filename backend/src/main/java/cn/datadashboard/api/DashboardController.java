@@ -86,6 +86,17 @@ public final class DashboardController {
         return calculator.reviewWithEnhancedMaterialTypesPrepared(DashboardCalculator.prepare(snapshot), projectId, current, previous, limit);
     }
 
+    @GetMapping("/projects/{projectId}/review-materials")
+    public DashboardModels.ReviewMaterials reviewMaterials(@PathVariable String projectId,
+            @RequestParam String currentStart, @RequestParam String currentEnd,
+            @RequestParam String previousStart, @RequestParam String previousEnd) {
+        String account = directory.account(projectId);
+        var current = range(currentStart, currentEnd); var previous = range(previousStart, previousEnd);
+        var input = prepared != null ? prepared.apply(account) : DashboardCalculator.prepare(snapshots.apply(account));
+        if (input == null || !account.equals(input.snapshot().accountId())) throw new IllegalStateException("FACT_QUERY_UNAVAILABLE");
+        return calculator.reviewMaterialsPrepared(input, projectId, current, previous);
+    }
+
     @GetMapping("/projects/{projectId}/material-types")
     public DashboardModels.MaterialTypeAnalysis materialTypes(@PathVariable String projectId,
             @RequestParam String currentStart, @RequestParam String currentEnd,

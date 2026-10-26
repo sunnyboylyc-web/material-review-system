@@ -7,7 +7,11 @@ import { comparisonClass } from '../domain/comparison'
 import SpendCurve from './SpendCurve.vue'
 import PeriodMaterialChart from './PeriodMaterialChart.vue'
 import MaterialTypeReview from './MaterialTypeReview.vue'
-const props = defineProps<{ result: ReviewResult; projectName: string; loadOverallMaterials?: (limit: number) => Promise<ReviewMaterialRow[]>; materialTypeSelection?: MaterialTypeSelection; loadMaterialTypes?: (query: MaterialTypeQuery) => Promise<TypeReview> }>()
+import MaterialColumnFilter from './MaterialColumnFilter.vue'
+import MaterialFilterToolbar from './MaterialFilterToolbar.vue'
+import { useMaterialDetailFilters } from '../composables/useMaterialDetailFilters'
+import type { FilterColumn } from '../domain/materialFilters'
+const props = defineProps<{ result: ReviewResult; projectName: string; loadOverallMaterials?: (limit: number) => Promise<ReviewMaterialRow[]>; loadAllOverallMaterials?: () => Promise<ReviewMaterialRow[]>; materialTypeSelection?: MaterialTypeSelection; loadMaterialTypes?: (query: MaterialTypeQuery) => Promise<TypeReview> }>()
 const emit = defineEmits<{ materialTypeUpdated: [selection: MaterialTypeSelection] }>()
 type Cohort = 'new' | 'historical' | 'aigc'
 const cohort = ref<GroupKey | null>(null)
@@ -20,13 +24,14 @@ const detailLimits = ref({ new: 10, historical: 10, aigc: 10, overall: 10 })
 const overallMaterials = ref(props.result.topMaterials)
 const overallLoading = ref(false)
 const overallError = ref('')
+const overallComplete = ref(false)
 let overallRequest = 0
 const smallMetrics = [{key:'cpm',label:'CPM'},{key:'cpc',label:'CPC'},{key:'ctr',label:'点击率'},{key:'cvr',label:'转化率'}] as const
 function setDetailLimit(value: number) {
   if (!cohort.value || !Number.isInteger(value)) return
   const limit = Math.max(1, Math.min(200, value))
   detailLimits.value[cohort.value] = limit
-  if (cohort.value === 'overall' && props.loadOverallMaterials && limit > overallMaterials.value.length) void loadOverall(limit)
+  if (cohort.value === 'overall' && !props.loadAllOverallMaterials && props.loadOverallMaterials && limit > overallMaterials.value.length) void loadOverall(limit)
 }
 async function loadOverall(limit: number) {
   const request = ++overallRequest, source = props.result
@@ -37,6 +42,15 @@ async function loadOverall(limit: number) {
   } catch (error) {
     if (request === overallRequest && source === props.result) overallError.value = error instanceof Error ? error.message : '素材明细读取失败。'
   } finally { if (request === overallRequest) overallLoading.value = false }
+}
+async function loadAllOverall() {
+  const request=++overallRequest,source=props.result
+  overallLoading.value=true;overallError.value=''
+  try {
+    const value=await props.loadAllOverallMaterials!()
+    if(request===overallRequest && source===props.result && cohort.value==='overall'){overallMaterials.value=value;overallComplete.value=true}
+  }catch(error){if(request===overallRequest&&source===props.result)overallError.value=error instanceof Error?error.message:'完整素材名录读取失败，请重新打开后重试。'}
+  finally{if(request===overallRequest)overallLoading.value=false}
 }
 const detailOptions = computed(() => [...new Set([10,20,30,40,50,...(cohort.value ? [detailLimits.value[cohort.value]] : [])])].sort((a,b)=>a-b))
 const metrics = [{ key: 'spend', label: '消耗' }, { key: 'roi', label: 'ROI' }, { key: 'materialCount', label: '素材数' }] as const
@@ -56,16 +70,22 @@ const ratio = (period: string, group: Cohort, key: 'spend' | 'materialCount'): N
 const validRatio = (period: string, key: 'spend' | 'materialCount') => ['new', 'historical', 'aigc'].every(g => ratio(period, g as Cohort, key).status === 'VALID')
 const width = (period: string, group: Cohort, key: 'spend' | 'materialCount') => `${Math.max(0, Math.min(100, (ratio(period, group, key).value ?? 0) * 100))}%`
 const pendingRatio = (period: string, key: 'spend' | 'materialCount') => Math.max(0, 1 - (ratio(period, 'new', key).value ?? 0) - (ratio(period, 'historical', key).value ?? 0) - (ratio(period, 'aigc', key).value ?? 0))
-const rows = computed(() => cohort.value === 'overall' ? overallMaterials.value.slice(0,detailLimits.value.overall) : cohort.value ? props.result.cohortMaterials[cohort.value].slice(0,detailLimits.value[cohort.value]) : [])
+const sourceRows=computed(()=>cohort.value==='overall'?overallMaterials.value:cohort.value?props.result.cohortMaterials[cohort.value]:[])
+const filterColumns:FilterColumn[]=[{key:'currentSpend',label:'本期消耗',kind:'number'},{key:'previousSpend',label:'同素材上期消耗',kind:'number'},{key:'roi',label:'本期 ROI',kind:'number'},{key:'ctr',label:'点击率',kind:'percent'},{key:'cvr',label:'转化率',kind:'percent'},{key:'cpm',label:'CPM',kind:'number'},{key:'creationDate',label:'首次投放时间',kind:'date'}]
+const detailFilter=useMaterialDetailFilters(cohort,sourceRows,row=>({materialId:row.materialId,materialName:row.materialName,values:{currentSpend:row.currentSpend,previousSpend:row.previousSpend,roi:row.roi,ctr:row.ctr,cvr:row.cvr,cpm:row.cpm,creationDate:row.creationDate}}),filterColumns)
+const detailFilters=detailFilter.filters
+const filterDisabled=computed(()=>cohort.value==='overall'&&!overallComplete.value)
+const rows=computed(()=>cohort.value?detailFilter.matched.value.slice(0,detailLimits.value[cohort.value]):[])
 async function open(group: GroupKey, id = '') {
   returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
   cohort.value = group; expanded.value = id
   await nextTick()
   dialog.value?.showModal?.(); closeButton.value?.focus()
-  if (group === 'overall' && props.loadOverallMaterials && detailLimits.value.overall > overallMaterials.value.length) void loadOverall(detailLimits.value.overall)
+  if (group==='overall' && props.loadAllOverallMaterials && !overallComplete.value) void loadAllOverall()
+  else if (group === 'overall' && props.loadOverallMaterials && detailLimits.value.overall > overallMaterials.value.length) void loadOverall(detailLimits.value.overall)
 }
 function close() { overallRequest++; overallLoading.value = false; overallError.value = ''; dialog.value?.close?.(); cohort.value = null; expanded.value = ''; returnFocus?.focus() }
-watch(() => props.result, () => { close(); overallMaterials.value = props.result.topMaterials })
+watch(() => props.result, () => { close(); overallMaterials.value = props.result.topMaterials;overallComplete.value=false;detailFilter.reset() })
 onBeforeUnmount(() => dialog.value?.close?.())
 </script>
 <template>
@@ -96,6 +116,10 @@ onBeforeUnmount(() => dialog.value?.close?.())
     <div class="pr-material-charts"><PeriodMaterialChart title="本周期整体素材消耗对比" :rows="result.topMaterials" :ranking-available="rankingAvailable('overall')" :partial="incompleteGroup('overall')" @select="id => open('overall',id)" /></div>
     <MaterialTypeReview v-if="result.materialTypes" :result="result.materialTypes" :project-name="projectName" :saved="materialTypeSelection" :load="loadMaterialTypes" @updated="emit('materialTypeUpdated',$event)" />
     <p v-else class="module-note">此份结果尚无素材类型统计，刷新数据后可查看。</p>
-    <dialog v-if="cohort" ref="dialog" class="pr-dialog" aria-labelledby="pr-dialog-title" @cancel.prevent="close" @click="event => { if (event.target === dialog) close() }"><header class="pr-dialog-head"><div><h3 id="pr-dialog-title">{{ names[cohort] }} · 素材明细</h3><p>{{ projectName }} · <span v-for="period in result.periods" :key="period.key">{{ period.label }} {{ period.range.start }} — {{ period.range.end }}　</span></p></div><div class="pr-detail-limit" role="group" aria-label="明细显示数量"><span>显示数量</span><button type="button" aria-label="减少明细显示数量" :disabled="detailLimits[cohort] <= 1" @click="setDetailLimit(detailLimits[cohort]-1)">−</button><select aria-label="快速选择明细显示数量" :value="detailLimits[cohort]" @change="setDetailLimit(Number(($event.target as HTMLSelectElement).value))"><option v-for="limit in detailOptions" :key="limit" :value="limit">{{ limit }} 条</option></select><button type="button" aria-label="增加明细显示数量" :disabled="detailLimits[cohort] >= 200" @click="setDetailLimit(detailLimits[cohort]+1)">+</button></div><button ref="closeButton" type="button" aria-label="关闭素材明细" @click="close">×</button></header><div class="pr-dialog-body"><p v-if="overallLoading && cohort === 'overall'" role="status" class="module-note">正在读取素材明细…</p><p v-if="overallError && cohort === 'overall'" role="alert" class="form-error">{{ overallError }}</p><div v-if="cohort !== 'overall'" class="pr-dialog-summary"><span v-for="item in metrics" :key="item.key">本期{{ item.label }} <b><MetricValue :result="metric('CURRENT',cohort,item.key)" :format="item.key === 'materialCount' ? 'integer' : 'decimal'" /></b></span></div><div class="table-shell"><table class="business-table pr-detail-table"><thead><tr><th>{{ cohort === 'overall' ? '本期素材' : '本期组内素材' }}</th><th>本期消耗</th><th>同素材上期消耗</th><th>本期 ROI</th><th>点击率</th><th>转化率</th><th>CPM</th><th>展开</th></tr></thead><tbody><template v-for="row in rows" :key="row.materialId"><tr><td><strong>{{ row.rank }}. {{ row.materialName ?? '名称未知' }}</strong><small>{{ formatMaterialLabel(row.materialId,row.materialName) }} · 首次投放时间 {{ formatCreationDate(row.creationDate) }}</small></td><td><MetricValue :result="row.currentSpend" /></td><td><MetricValue :result="row.previousSpend" /></td><td><MetricValue :result="row.roi" /></td><td><MetricValue :result="row.ctr" format="percent" /></td><td><MetricValue :result="row.cvr" format="percent" /></td><td><MetricValue :result="row.cpm" /></td><td><button type="button" class="expand-button" :aria-expanded="expanded === row.materialId" :aria-label="`${expanded === row.materialId ? '收起' : '展开'}第 ${row.rank} 名本周期消耗曲线`" @click="expanded = expanded === row.materialId ? '' : row.materialId"><svg viewBox="0 0 16 16" :class="{'is-expanded':expanded === row.materialId}" aria-hidden="true"><path d="m3 5 5 5 5-5" /></svg><span>{{ expanded === row.materialId ? '收起' : '展开' }}</span></button></td></tr><tr v-if="expanded === row.materialId" class="pr-expanded"><td colspan="8"><h4>本周期逐日消耗</h4><SpendCurve :days="row.dailySpend" expanded label="本周期消耗曲线，缺失日期断线" /><div class="daily-value-list"><span v-for="day in row.dailySpend" :key="day.date">{{ day.date }} <MetricValue :result="day.spend" /></span></div></td></tr></template><tr v-if="!rows.length"><td colspan="8">{{ emptyMessage }}</td></tr></tbody></table></div></div></dialog>
+    <dialog v-if="cohort" ref="dialog" class="pr-dialog" aria-labelledby="pr-dialog-title" @cancel.prevent="close" @click="event => { if (event.target === dialog) close() }"><header class="pr-dialog-head"><div><h3 id="pr-dialog-title">{{ names[cohort] }} · 素材明细</h3><p>{{ projectName }} · <span v-for="period in result.periods" :key="period.key">{{ period.label }} {{ period.range.start }} — {{ period.range.end }}　</span></p></div><div class="pr-detail-limit" role="group" aria-label="明细显示数量"><span>显示数量</span><button type="button" aria-label="减少明细显示数量" :disabled="detailLimits[cohort] <= 1" @click="setDetailLimit(detailLimits[cohort]-1)">−</button><select aria-label="快速选择明细显示数量" :value="detailLimits[cohort]" @change="setDetailLimit(Number(($event.target as HTMLSelectElement).value))"><option v-for="limit in detailOptions" :key="limit" :value="limit">{{ limit }} 条</option></select><button type="button" aria-label="增加明细显示数量" :disabled="detailLimits[cohort] >= 200" @click="setDetailLimit(detailLimits[cohort]+1)">+</button></div><button ref="closeButton" type="button" aria-label="关闭素材明细" @click="close">×</button></header><div class="pr-dialog-body"><p v-if="overallLoading && cohort === 'overall'" role="status" class="module-note">正在读取素材明细…</p><p v-if="overallError && cohort === 'overall'" role="alert" class="form-error">{{ overallError }}</p><div v-if="cohort !== 'overall'" class="pr-dialog-summary"><span v-for="item in metrics" :key="item.key">本期{{ item.label }} <b><MetricValue :result="metric('CURRENT',cohort,item.key)" :format="item.key === 'materialCount' ? 'integer' : 'decimal'" /></b></span></div><MaterialFilterToolbar v-model="detailFilters" :total="sourceRows.length" :matched="detailFilter.matched.value.length" :displayed="rows.length" :disabled="filterDisabled"/><div class="detail-date-filter"><MaterialColumnFilter :disabled="filterDisabled" :column="filterColumns[6]" :model-value="detailFilters.columns.creationDate" :options="detailFilter.options(filterColumns[6])" @update:model-value="value=>detailFilter.setColumn('creationDate',value)" /></div><p v-if="cohort==='overall' && !overallComplete && !overallLoading && !overallError" class="module-note">这份结果尚未提供完整素材名录，暂不能进行全量筛选。</p><div class="table-shell"><table class="business-table pr-detail-table"><thead><tr><th>{{ cohort === 'overall' ? '本期素材' : '本期组内素材' }}</th><th><MaterialColumnFilter :disabled="filterDisabled" :column="filterColumns[0]" :model-value="detailFilters.columns.currentSpend" :options="detailFilter.options(filterColumns[0])" @update:model-value="value=>detailFilter.setColumn('currentSpend',value)" /></th><th><MaterialColumnFilter :disabled="filterDisabled" :column="filterColumns[1]" :model-value="detailFilters.columns.previousSpend" :options="detailFilter.options(filterColumns[1])" @update:model-value="value=>detailFilter.setColumn('previousSpend',value)" /></th><th><MaterialColumnFilter :disabled="filterDisabled" :column="filterColumns[2]" :model-value="detailFilters.columns.roi" :options="detailFilter.options(filterColumns[2])" @update:model-value="value=>detailFilter.setColumn('roi',value)" /></th><th><MaterialColumnFilter :disabled="filterDisabled" :column="filterColumns[3]" :model-value="detailFilters.columns.ctr" :options="detailFilter.options(filterColumns[3])" @update:model-value="value=>detailFilter.setColumn('ctr',value)" /></th><th><MaterialColumnFilter :disabled="filterDisabled" :column="filterColumns[4]" :model-value="detailFilters.columns.cvr" :options="detailFilter.options(filterColumns[4])" @update:model-value="value=>detailFilter.setColumn('cvr',value)" /></th><th><MaterialColumnFilter :disabled="filterDisabled" :column="filterColumns[5]" :model-value="detailFilters.columns.cpm" :options="detailFilter.options(filterColumns[5])" @update:model-value="value=>detailFilter.setColumn('cpm',value)" /></th><th>展开</th></tr></thead><tbody><template v-for="row in rows" :key="row.materialId"><tr><td><strong>{{ row.rank }}. {{ row.materialName ?? '名称未知' }}</strong><small>{{ formatMaterialLabel(row.materialId,row.materialName) }} · 首次投放时间 {{ formatCreationDate(row.creationDate) }}</small></td><td><MetricValue :result="row.currentSpend" /></td><td><MetricValue :result="row.previousSpend" /></td><td><MetricValue :result="row.roi" /></td><td><MetricValue :result="row.ctr" format="percent" /></td><td><MetricValue :result="row.cvr" format="percent" /></td><td><MetricValue :result="row.cpm" /></td><td><button type="button" class="expand-button" :aria-expanded="expanded === row.materialId" :aria-label="`${expanded === row.materialId ? '收起' : '展开'}第 ${row.rank} 名本周期消耗曲线`" @click="expanded = expanded === row.materialId ? '' : row.materialId"><svg viewBox="0 0 16 16" :class="{'is-expanded':expanded === row.materialId}" aria-hidden="true"><path d="m3 5 5 5 5-5" /></svg><span>{{ expanded === row.materialId ? '收起' : '展开' }}</span></button></td></tr><tr v-if="expanded === row.materialId" class="pr-expanded"><td colspan="8"><h4>本周期逐日消耗</h4><SpendCurve :days="row.dailySpend" expanded label="本周期消耗曲线，缺失日期断线" /><div class="daily-value-list"><span v-for="day in row.dailySpend" :key="day.date">{{ day.date }} <MetricValue :result="day.spend" /></span></div></td></tr></template><tr v-if="!rows.length"><td colspan="8">{{ detailFilter.active.value ? '没有符合当前筛选条件的素材，请调整或清除筛选。' : emptyMessage }}</td></tr></tbody></table></div></div></dialog>
   </div>
 </template>
+
+<style scoped>
+.detail-date-filter{display:flex;justify-content:flex-end;margin:-6px 0 14px}
+</style>

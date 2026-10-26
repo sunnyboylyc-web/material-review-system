@@ -11,10 +11,10 @@ with patch.dict(sys.modules,{'scheduled_collection':candidate}):spec.loader.exec
 omit={'test_slot_is_shanghai_yesterday_no_catchup','test_oneoff_slot_retries_failed_but_skips_verified','test_1420_skips_every_verified_project_without_collection','test_1420_has_new_identity_and_deduplicates_until_142459','test_backup_failure_no_import_other_project_attempted','test_database_check_scoped_exact_account_day_three_tables','test_persistent_backup_once_per_day_and_changed_dump_rejected','test_credential_init_failure_replaces_previous_success_without_secret'}
 class TargetTests(unittest.TestCase):
  def test_target_slots_and_no_old_oneoffs(self):
-  for hour,minute in [(8,0),(8,30),(9,0),(9,30),(10,0),(10,30),(11,0),(12,0)]:
+  for hour,minute in [(8,0),(8,30),(9,0),(9,30),(10,0),(10,30),(11,0),(11,30),(12,0)]:
    day,point=candidate.slot(dt.datetime(2026,10,22,hour,minute,tzinfo=dt.timezone(dt.timedelta(hours=8))))
    self.assertEqual(day,'2026-10-21')
-  for hour,minute in [(8,59),(11,30),(14,20)]:
+  for hour,minute in [(8,59),(11,29),(11,35),(14,20)]:
    with self.assertRaises(candidate.Rejected):candidate.slot(dt.datetime(2026,10,22,hour,minute,tzinfo=dt.timezone(dt.timedelta(hours=8))))
  def test_parameterized_database_probe_uses_only_owned_tables(self):
   from unittest.mock import patch,MagicMock

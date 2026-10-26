@@ -53,8 +53,8 @@
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/api/DashboardController.java",
-      "bytes": 8247,
-      "sha256": "6ff4930dea0f76ca095c6b8095eb9423718a199d78fda8581dd953814107d714"
+      "bytes": 9070,
+      "sha256": "4b6b43d61dd0490ee1fc7a874dae56a0ce344b630b4213fe7e1c6347a34ac473"
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/api/DatabaseBackupController.java",
@@ -93,13 +93,13 @@
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/calculation/DashboardCalculator.java",
-      "bytes": 57412,
-      "sha256": "e42cd2ef757a3a7b0fa01f7f4d0c05d952b43b1261db334c3606c8dada87c1bf"
+      "bytes": 58078,
+      "sha256": "36f6268510ae6a16a7b1debbf8681a8c87d1630529e1132154792d3ef374f3c6"
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/calculation/DashboardModels.java",
-      "bytes": 7161,
-      "sha256": "56bfd373b9acaea49845b7c9d55ac91d7ce85959407b62700a4176c4fc27c1d1"
+      "bytes": 7500,
+      "sha256": "1eb278edbf3c36d09db9377db2d9df5cbc7efba9b27bc1c698dd81404ae3181d"
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/calculation/MetricArithmetic.java",
@@ -518,8 +518,8 @@
     },
     {
       "path": "backend/src/test/java/cn/datadashboard/api/DashboardControllerTest.java",
-      "bytes": 5159,
-      "sha256": "3dc4f666044a0abe4752b3e30f6291e8339eaa471619c273e465fe7aaa4105e8"
+      "bytes": 6027,
+      "sha256": "b1333a904aa002b256a2370391dda774ccc686c218bbf28ad094c030a93785a9"
     },
     {
       "path": "backend/src/test/java/cn/datadashboard/api/HistoryUploadControllerTest.java",
@@ -593,13 +593,13 @@
     },
     {
       "path": "backend/src/test/java/cn/datadashboard/calculation/MaterialTypeAnalysisTest.java",
-      "bytes": 7708,
-      "sha256": "36c1675e128a61b361c993ac6d58e1ae07e4d8824b1ac7a893832a9e682b61d5"
+      "bytes": 9012,
+      "sha256": "6067327939b390f9af831dbc83c4731c51c20ded89b8c4b0c4fba9da517f6169"
     },
     {
       "path": "backend/src/test/java/cn/datadashboard/calculation/MaterialTypePreviewMain.java",
-      "bytes": 7557,
-      "sha256": "eb99413c5998b3787ccb60fdc581b74820754d3f521bbd383762ff32e98f6d3e"
+      "bytes": 9746,
+      "sha256": "5ebf9f7fd95902431358c816a6616f5bf67eb9a53a37aca8d312f2bfed517193"
     },
     {
       "path": "backend/src/test/java/cn/datadashboard/calculation/MaterialTypeReviewTest.java",
@@ -1028,8 +1028,8 @@
     },
     {
       "path": "frontend/src/App.vue",
-      "bytes": 65400,
-      "sha256": "5bcd5d602d5b3e064e77204c7d8df3ad1828a68e0b6dbc894209465b5ba70dbc"
+      "bytes": 66541,
+      "sha256": "499d13326d075e808603c287f6c0d1fbcdf14c3a1acd65101b36f67f1a1f44fc"
     },
     {
       "path": "frontend/src/adapters/adminAccounts.ts",
@@ -1038,8 +1038,8 @@
     },
     {
       "path": "frontend/src/adapters/dashboardAdapter.ts",
-      "bytes": 783,
-      "sha256": "e5f2e0856c6a6c786465a1fb05e9213d39490b87b1b70c2685a9fbb75cac7dae"
+      "bytes": 889,
+      "sha256": "287b5ce03566812b755d20d5c1befb574f609d4d44cf11ee613e453d6caee20a"
     },
     {
       "path": "frontend/src/adapters/httpCollectedExportAdapter.ts",
@@ -1058,8 +1058,8 @@
     },
     {
       "path": "frontend/src/adapters/httpDashboardAdapter.ts",
-      "bytes": 18098,
-      "sha256": "e6233970c094330e2d4e4b5c5a17eabc30cee4a606982c75f236e695e79eac61"
+      "bytes": 19473,
+      "sha256": "8a3415b31d0eda9459b2058db2984e6d34800c5640d42b5a5bfcc207bb3f14c8"
     },
     {
       "path": "frontend/src/adapters/httpDatabaseBackupAdapter.ts",
@@ -1118,8 +1118,8 @@
     },
     {
       "path": "frontend/src/components/CollectionOperationsPanel.vue",
-      "bytes": 2446,
-      "sha256": "2dd62d16bee0753258708fc79f9c34256ebb0c375f038285631c2be3cf29c1ba"
+      "bytes": 2454,
+      "sha256": "45a0f44d9eb77aae7b8dcf38d402cb3ab0c020ef162f469c95a7729a73ea8a70"
     },
     {
       "path": "frontend/src/components/CollectionStatusPanel.vue",
@@ -1182,9 +1182,19 @@
       "sha256": "a701f1249e24d89b45c1bb9d3b691162787b9019025e30d4e796d8df22aec414"
     },
     {
+      "path": "frontend/src/components/MaterialColumnFilter.vue",
+      "bytes": 6631,
+      "sha256": "79e5b80b5bb993d5e1c5e4dec3b674d0dfb76a26ec23167505806cba74497d56"
+    },
+    {
       "path": "frontend/src/components/MaterialDrawer.vue",
       "bytes": 3290,
       "sha256": "6e1051e361defc5db70402c5a4438e85b6dc9f8ecefcd52048cad4e981aa265f"
+    },
+    {
+      "path": "frontend/src/components/MaterialFilterToolbar.vue",
+      "bytes": 1884,
+      "sha256": "2c8b8b857eb0513e5113497efe4a5dbc26cfd79459001a7ebb14e0bf4d2d7e8e"
     },
     {
       "path": "frontend/src/components/MaterialGallery.vue",
@@ -1197,9 +1207,14 @@
       "sha256": "102a3439634cf3e5ed95d2509a45438ac2a95b928f779c73ab33dff9f61a8b0d"
     },
     {
+      "path": "frontend/src/components/MaterialTestPeriodHelp.vue",
+      "bytes": 3045,
+      "sha256": "91c61569d10432c2a0176b04fd191a3d7f5640cfba6c0a11a8d22214da41b278"
+    },
+    {
       "path": "frontend/src/components/MaterialTypeReview.vue",
-      "bytes": 20371,
-      "sha256": "5b2a24bf1ef6bb8c0d6068e88cb2a4b01b3eea0f469f5039b44b4a546ad4a739"
+      "bytes": 23676,
+      "sha256": "a8b3fe71f18a318f5d735d735f84eb1e96040ab8320cf3b70e80f6a30f16fa33"
     },
     {
       "path": "frontend/src/components/MetricValue.vue",
@@ -1223,8 +1238,8 @@
     },
     {
       "path": "frontend/src/components/PeriodReview.vue",
-      "bytes": 15832,
-      "sha256": "d1ecc12f434ed07655cea79eaec31887127b4ae1948de96452be361a788d7f4c"
+      "bytes": 20053,
+      "sha256": "24303f5f99f0b8e2a165791919bd8f21d8f333b15746fe3c6ad32a06fc339801"
     },
     {
       "path": "frontend/src/components/ReturnToTop.vue",
@@ -1262,6 +1277,11 @@
       "sha256": "2282b66c6341bd7d3f6fa53d22508d5f3803d70bee1142cd5dce611cac765357"
     },
     {
+      "path": "frontend/src/composables/useMaterialDetailFilters.ts",
+      "bytes": 1246,
+      "sha256": "81b8f5750c09220a318e88e53c7254312623b97233d6a32bcb079045c7fcfdf2"
+    },
+    {
       "path": "frontend/src/dashboard-theme.css",
       "bytes": 741,
       "sha256": "92a3e497481970a9f653bf3200c9051eb8c46ee1f6cebdd83d5f5bc97796b664"
@@ -1293,8 +1313,8 @@
     },
     {
       "path": "frontend/src/domain/dashboard.ts",
-      "bytes": 5658,
-      "sha256": "13af4807e67a184bb5ac247c0042cb32b8b1e846531844227a8e9d9ec7c8bafa"
+      "bytes": 5888,
+      "sha256": "594e2c7c8a5d037ccece0e58085b51a2552410a71cabad4fe37b3656c663674e"
     },
     {
       "path": "frontend/src/domain/formatting.ts",
@@ -1305,6 +1325,11 @@
       "path": "frontend/src/domain/historyUpload.ts",
       "bytes": 3875,
       "sha256": "dbcf32236ff8492525abf22a3b369a93dd540eb83e81fc828644bd78a76616e5"
+    },
+    {
+      "path": "frontend/src/domain/materialFilters.ts",
+      "bytes": 4331,
+      "sha256": "c3c41434cfd764cdce7fc1aa7af236709d0e1432b08dd270d10474def432e6fb"
     },
     {
       "path": "frontend/src/domain/operations.ts",
@@ -1363,8 +1388,8 @@
     },
     {
       "path": "frontend/src/preview/MaterialTypesPreview.vue",
-      "bytes": 3314,
-      "sha256": "76766ec215e97095e152be6da21387302f38d20b603234fa80b06708f9d845bd"
+      "bytes": 4021,
+      "sha256": "6c20adcf2982024b8cd1778ff33171031a23bea01e43b17cdcbdc1f0465b77c4"
     },
     {
       "path": "frontend/src/preview/collection-theme.ts",
@@ -1473,8 +1498,8 @@
     },
     {
       "path": "frontend/src/test/D187OperationsLayout.spec.ts",
-      "bytes": 8474,
-      "sha256": "d7e8b76de7a845094a4cea2ab4821908347107ac5810c3b91490f52c27e0c781"
+      "bytes": 8482,
+      "sha256": "1a5ac3aabda2de857ee6aa58f08bc0f71ee030b312acbea95902d20a5389e290"
     },
     {
       "path": "frontend/src/test/D187PreviewFixture.spec.ts",
@@ -1550,6 +1575,11 @@
       "path": "frontend/src/test/MaterialDrawerPresentation.spec.ts",
       "bytes": 1234,
       "sha256": "b023845bc1d1e39f3a349e8df7facdf081d99a169b317c66346d7ef2c81f8597"
+    },
+    {
+      "path": "frontend/src/test/MaterialFilters.spec.ts",
+      "bytes": 10743,
+      "sha256": "8da2c76b9094b4eb4aa17bd0040c72191bd90633077ea46dfffde6126cbd6a29"
     },
     {
       "path": "frontend/src/test/MaterialGalleryPresentation.spec.ts",
@@ -1928,8 +1958,8 @@
     },
     {
       "path": "tools/collector/scheduled_collection_titania.py",
-      "bytes": 33766,
-      "sha256": "31a599137185125d19087a3aa1692a88c54e0a2e22bf54d50f3984a64befe04f"
+      "bytes": 33770,
+      "sha256": "4952fa3ccf9e8e6384231c1ca881b6bfa4e0acbc1fc398c1e70723c27522eb46"
     },
     {
       "path": "tools/collector/test_collect.py",
@@ -1968,8 +1998,8 @@
     },
     {
       "path": "tools/collector/test_scheduled_collection_titania.py",
-      "bytes": 3430,
-      "sha256": "a7aadff62f7acfa06a31a4176647fa97bc79cb5a5d78e57a7e3889907bcd2e18"
+      "bytes": 3446,
+      "sha256": "d171645bc0fa15822b9796abdaaa83465be9fd6f8d12b1963edae85b9429ab8e"
     },
     {
       "path": "tools/dev/prepare_public_test_fixtures.py",

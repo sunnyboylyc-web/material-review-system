@@ -8,6 +8,21 @@ import static cn.datadashboard.calculation.DashboardModels.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class MaterialTypeAnalysisTest {
+    @Test void completeOverallDetailsIncludeMaterialsBeyondTwoHundredWithoutChangingReviewOrFacts() {
+        List<Fact> facts=new ArrayList<>();
+        for(int i=1;i<=230;i++)facts.add(row(5,"SYNTHETIC_"+i,"原创示例"+i,5,231-i,500));
+        facts.add(new Fact(day(5),"-2","AIGC集合",null,BigDecimal.ONE,BigDecimal.TEN,BigDecimal.TEN,BigDecimal.ONE,BigDecimal.ONE));
+        var input=prepared(facts);
+        var before=calculator.reviewWithEnhancedMaterialTypesPrepared(input,"synthetic",range(5,5),range(1,4),10);
+        var complete=calculator.reviewMaterialsPrepared(input,"synthetic",range(5,5),range(1,4));
+        assertThat(complete.rows()).hasSize(231);
+        assertThat(complete.rows().subList(0,10)).isEqualTo(before.topMaterials());
+        assertThat(complete.rows()).anyMatch(r->r.materialId().equals("SYNTHETIC_230"));
+        assertThat(complete.rows().stream().filter(r->r.materialId().equals("-2")).findFirst().orElseThrow().creationDate().status()).isEqualTo("NOT_APPLICABLE");
+        assertThat(complete.snapshotFingerprint()).isEqualTo(before.snapshotFingerprint());
+        assertThat(calculator.reviewWithEnhancedMaterialTypesPrepared(input,"synthetic",range(5,5),range(1,4),10)).isEqualTo(before);
+        assertThat(input.snapshot().facts()).isEqualTo(facts);
+    }
     private final DashboardCalculator calculator = new DashboardCalculator(java.time.Clock.fixed(
             java.time.Instant.parse("2026-02-01T00:00:00Z"), java.time.ZoneOffset.UTC));
     private static LocalDate day(int value) { return LocalDate.of(2026, 1, value); }

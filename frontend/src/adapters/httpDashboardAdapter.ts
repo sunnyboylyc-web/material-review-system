@@ -1,7 +1,7 @@
 import type { DashboardDataAdapter } from './dashboardAdapter'
 import { sessionFetch } from '../domain/session'
 import { DASHBOARD_SCHEMA_VERSION, MAX_DISPLAY_ROWS } from '../domain/dashboard'
-import type { MaterialTypeQuery, MaterialTypeReview, ProjectModule, ReviewQuery, ReviewResult, TopResult } from '../domain/dashboard'
+import type { MaterialTypeQuery, MaterialTypeReview, ProjectModule, ReviewMaterials, ReviewQuery, ReviewResult, TopResult } from '../domain/dashboard'
 import { isProjectCategory } from '../domain/projectCategory'
 import { enumerateIsoDates, shiftIsoDate } from '../time/shanghai'
 
@@ -210,6 +210,19 @@ export function validateMaterialTypeResponse(value: unknown, projectId: string, 
   return item.analysis as MaterialTypeReview
 }
 
+export function validateReviewMaterials(value: unknown, projectId: string, query: ReviewQuery): ReviewMaterials {
+  const item=object(value)
+  requireValue(item.schemaVersion==='review-materials-1.0.0' && item.projectId===projectId && item.evidenceKind==='CURRENT_FACTS' && string(item.snapshotFingerprint))
+  for(const key of ['current','previous'] as const){const range=object(item[key]);requireValue(range.start===query[key].start && range.end===query[key].end)}
+  const dates=enumerateIsoDates(query.current.start,query.current.end)
+  rankedRows(item.rows,Number.MAX_SAFE_INTEGER).forEach(row=>{
+    for(const key of ['currentSpend','previousSpend','periodChange','spendShare','roi','ctr','cvr','cpm'])numeric(row[key])
+    const days=array(row.dailySpend).map(object);requireValue(days.length===dates.length)
+    days.forEach((day,index)=>{requireValue(day.date===dates[index]);numeric(day.spend)})
+  })
+  return value as ReviewMaterials
+}
+
 export function validateTopResponse(value: unknown): TopResult {
   const item = header(value)
   requireValue(isoDate(item.selectedDate))
@@ -280,6 +293,10 @@ export class HttpDashboardAdapter implements DashboardDataAdapter {
       previousStart: query.previous.start, previousEnd: query.previous.end,
       previousTestStart: query.previousTest.start, previousTestEnd: query.previousTest.end })
     return validateMaterialTypeResponse(await this.get(`/api/projects/${encodeURIComponent(projectId)}/material-types?${params}`), projectId, query)
+  }
+  async fetchReviewMaterials(projectId: string, query: ReviewQuery): Promise<ReviewMaterials> {
+    const params=new URLSearchParams({currentStart:query.current.start,currentEnd:query.current.end,previousStart:query.previous.start,previousEnd:query.previous.end})
+    return validateReviewMaterials(await this.get(`/api/projects/${encodeURIComponent(projectId)}/review-materials?${params}`),projectId,query)
   }
 }
 

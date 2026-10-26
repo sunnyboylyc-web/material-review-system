@@ -1,0 +1,8 @@
+<script setup lang="ts">
+import type { MaterialFilters } from '../domain/materialFilters'
+import { emptyFilters } from '../domain/materialFilters'
+defineProps<{ modelValue: MaterialFilters; total: number; matched: number; displayed: number; disabled?: boolean }>()
+const emit=defineEmits<{ 'update:modelValue':[value: MaterialFilters] }>()
+</script>
+<template><div class="material-filter-toolbar"><label><span>搜索素材</span><input type="search" :disabled="disabled" :value="modelValue.search" placeholder="输入视频名称关键词或素材ID" aria-label="搜索素材名称或ID" @input="emit('update:modelValue',{...modelValue,search:($event.target as HTMLInputElement).value})"/></label><span class="material-filter-count" role="status">{{ disabled?'完整素材名录尚未就绪':`匹配 ${matched} 个 / 共 ${total} 个 · 显示 ${displayed} 个` }}</span><button type="button" :disabled="disabled" @click="emit('update:modelValue',emptyFilters())">清除全部筛选</button><small>先筛选全部素材，再按显示数量展示；上方汇总不变。</small></div></template>
+<style scoped>.material-filter-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 20px;padding:15px 16px;background:#171c2b;border:1px solid #343b50;border-radius:10px}.material-filter-toolbar label{display:flex;align-items:center;gap:10px;font-size:13px}.material-filter-toolbar input{width:min(340px,50vw);padding:9px 12px;background:#0d1220;border:1px solid #4a526a;border-radius:6px;color:#ebe8dd;font:inherit}.material-filter-count{font-size:12px;color:#bbc3d3}.material-filter-toolbar button{margin-left:auto;padding:8px 12px;background:#252b40;border:1px solid #495069;border-radius:6px;color:#ddd8c4;cursor:pointer}.material-filter-toolbar small{width:100%;color:#8e9bb4;font-size:11px}.material-filter-toolbar :disabled{opacity:.5;cursor:wait}</style>

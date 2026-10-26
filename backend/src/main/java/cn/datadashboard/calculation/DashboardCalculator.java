@@ -96,6 +96,15 @@ public final class DashboardCalculator {
                         "aigc", cohortRows(index, now, before, "aigc")));
     }
 
+    public ReviewMaterials reviewMaterialsPrepared(PreparedSnapshot snapshot, String projectId, DateRange current, DateRange previous) {
+        validateProject(projectId); validateRange(current); validateRange(previous);
+        Index index = new Index(Objects.requireNonNull(snapshot));
+        PeriodCalculation now = period(index, "CURRENT", "本周期", current);
+        PeriodCalculation before = period(index, "PREVIOUS", "上周期", previous);
+        return new ReviewMaterials("review-materials-1.0.0", projectId, "CURRENT_FACTS", current, previous,
+                index.fingerprint(), detailedRows(index, now, before, null, Integer.MAX_VALUE));
+    }
+
     public Top top(Snapshot snapshot, String projectId, LocalDate date, int limit) {
         validateTop(projectId, date, limit);
         return topPrepared(prepare(snapshot), projectId, date, limit);

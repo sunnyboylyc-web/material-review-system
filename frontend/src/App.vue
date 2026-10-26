@@ -407,6 +407,18 @@ async function loadMaterialTypes(query: MaterialTypeQuery): Promise<MaterialType
   return result
 }
 
+async function loadAllReviewOverallMaterials(): Promise<ReviewResult['topMaterials']> {
+  const source=reviewResult.value, projectId=selectedProjectId.value
+  if(!source || !adapter.fetchReviewMaterials) throw new Error('当前入口暂不支持完整素材名录。')
+  const query={current:{...source.periods.find(p=>p.key==='CURRENT')!.range},previous:{...source.periods.find(p=>p.key==='PREVIOUS')!.range}}
+  const result=await adapter.fetchReviewMaterials(projectId,query)
+  if(selectedProjectId.value!==projectId || reviewResult.value!==source) throw new Error('项目或周期已变化，请重新打开素材明细。')
+  if(result.projectId!==projectId || result.current.start!==query.current.start || result.current.end!==query.current.end
+    || result.previous.start!==query.previous.start || result.previous.end!==query.previous.end || result.snapshotFingerprint!==source.snapshotFingerprint)
+    throw new Error('数据版本或查询条件已变化，请先刷新周期数据后再筛选素材。')
+  return result.rows
+}
+
 async function loadReviewOverallMaterials(limit: number): Promise<ReviewResult['topMaterials']> {
   const source = reviewResult.value, projectId = selectedProjectId.value
   if (!source || !Number.isInteger(limit) || limit < 1 || limit > MAX_DISPLAY_ROWS) throw new Error('请选择有效的明细显示数量。')
@@ -808,7 +820,7 @@ onBeforeUnmount(() => {
           <p v-else-if="!reviewLoading" class="module-note" role="status">点击“刷新数据”查看已入库数据，不会启动采集。</p>
 
           <div v-if="!reviewResult" class="analysis-empty" :aria-busy="reviewLoading"><ConstellationGlyph :kind="1"/><p class="overline">PERIOD COMPARISON</p><h4>{{ reviewLoading ? '正在整理周期表现…' : '把两个周期，放在一起看。' }}</h4><p>选择本期与上期日期，点击“刷新数据”。<br>整体表现、素材构成与 TOP 对比将在这里展开。</p><div class="empty-stage-labels"><span>01 整体表现</span><span>02 素材构成</span><span>03 分类对比</span></div></div>
-          <PeriodReview v-if="reviewResult" :key="selectedProjectId" :result="reviewResult" :project-name="selectedProject.name" :load-overall-materials="loadReviewOverallMaterials" :material-type-selection="materialTypeSelections[selectedProjectId]" :load-material-types="loadMaterialTypes" @material-type-updated="selection => materialTypeSelections[selectedProjectId] = selection" />
+          <PeriodReview v-if="reviewResult" :key="selectedProjectId" :result="reviewResult" :project-name="selectedProject.name" :load-overall-materials="loadReviewOverallMaterials" :load-all-overall-materials="adapter.fetchReviewMaterials ? loadAllReviewOverallMaterials : undefined" :material-type-selection="materialTypeSelections[selectedProjectId]" :load-material-types="loadMaterialTypes" @material-type-updated="selection => materialTypeSelections[selectedProjectId] = selection" />
         </section>
 
         <section v-show="activeView === 'dashboard' && activeTab === 'top'" class="panel daily-panel" aria-labelledby="top-title">

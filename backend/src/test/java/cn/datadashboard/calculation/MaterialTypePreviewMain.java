@@ -12,7 +12,9 @@ import static cn.datadashboard.calculation.DashboardModels.*;
 
 /** Local-only synthetic UI fixture. Never loads application configuration or connects to storage. */
 public final class MaterialTypePreviewMain {
-    public static Snapshot fixture() {
+    public static Snapshot fixture() { return fixture(false); }
+    public static Snapshot filterFixture() { return fixture(true); }
+    private static Snapshot fixture(boolean extended) {
         List<Fact> facts = new ArrayList<>();
         for (int i = 1; i <= 14; i++) {
             LocalDate first = LocalDate.of(2026, 1, 1 + (i % 8));
@@ -34,6 +36,12 @@ public final class MaterialTypePreviewMain {
                 facts.add(row(d, "PM", "混剪 · 上期素材", LocalDate.of(2025, 12, 23), 100, 2.0));
             }
         }
+        // Low-ranked synthetic rows make searches beyond the first 200 review rows observable.
+        for (int i=1;extended && i<=225;i++) {
+            LocalDate first=LocalDate.of(2026,1,1);
+            for (LocalDate d=first;!d.isAfter(LocalDate.of(2026,1,15));d=d.plusDays(1))
+                facts.add(row(d,"SEARCH"+String.format("%03d",i),"原创 · 筛选示例 " + i + (i%3==0?" ai 商单":""),first,1,2.0));
+        }
         List<DayEvidence> days = new ArrayList<>();
         for (LocalDate d = LocalDate.of(2025, 12, 20); !d.isAfter(LocalDate.of(2026, 1, 15)); d = d.plusDays(1))
             days.add(new DayEvidence(d, days.size() + 1, "synthetic-" + d, "SYNTHETIC"));
@@ -45,7 +53,7 @@ public final class MaterialTypePreviewMain {
     }
     public static void main(String[] args) throws Exception {
         var calculator = new DashboardCalculator();
-        var prepared = DashboardCalculator.prepare(fixture());
+        var prepared = DashboardCalculator.prepare(filterFixture());
         var mapper = JsonMapper.builder().build();
         var server = HttpServer.create(new InetSocketAddress("127.0.0.1",18082),0);
         server.createContext("/review", exchange -> {
@@ -93,6 +101,24 @@ public final class MaterialTypePreviewMain {
             exchange.getResponseHeaders().set("Access-Control-Allow-Origin","http://127.0.0.1:5186");
             exchange.sendResponseHeaders(status,body.length);
             try (var out = exchange.getResponseBody()) { out.write(body); }
+        });
+        server.createContext("/review-materials", exchange -> {
+            byte[] body; int status=200;
+            try {
+                if (!"GET".equals(exchange.getRequestMethod())) throw new IllegalArgumentException();
+                Map<String,String> p=new HashMap<>();
+                for(String pair:Objects.requireNonNull(exchange.getRequestURI().getRawQuery()).split("&")){
+                    String[] kv=pair.split("=",2);p.put(kv[0],URLDecoder.decode(kv[1],StandardCharsets.UTF_8));
+                }
+                var current=new DateRange(LocalDate.parse(p.get("currentStart")),LocalDate.parse(p.get("currentEnd")));
+                var previous=new DateRange(LocalDate.parse(p.get("previousStart")),LocalDate.parse(p.get("previousEnd")));
+                var value=calculator.reviewMaterialsPrepared(prepared,"synthetic-type-preview",current,previous);
+                body=mapper.writeValueAsBytes(new ReviewMaterials(value.schemaVersion(),value.projectId(),"SYNTHETIC",value.current(),value.previous(),value.snapshotFingerprint(),value.rows()));
+            }catch(Exception error){status=400;body="{\"error\":\"INVALID_SYNTHETIC_QUERY\"}".getBytes(StandardCharsets.UTF_8);}
+            exchange.getResponseHeaders().set("Content-Type","application/json; charset=utf-8");
+            exchange.getResponseHeaders().set("Cache-Control","no-store");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin","http://127.0.0.1:5186");
+            exchange.sendResponseHeaders(status,body.length);try(var out=exchange.getResponseBody()){out.write(body);}
         });
         server.start();
         System.out.println("Synthetic preview calculator listening on 127.0.0.1:18082");

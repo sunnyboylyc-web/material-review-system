@@ -29,6 +29,10 @@ public final class DashboardModels {
                                     Result previousSpend, Result periodChange, FirstSpend firstSpend,
                                     Result spendShare, Result roi, Result ctr, Result cvr, Result cpm,
                                     List<DailySpend> dailySpend, CreationDate creationDate) { }
+    /** On-demand complete list; never added to saved review envelopes. */
+    public record ReviewMaterials(String schemaVersion, String projectId, String evidenceKind,
+                                  DateRange current, DateRange previous, String snapshotFingerprint,
+                                  List<ReviewMaterialRow> rows) { }
     public record Review(String schemaVersion, String projectId, String evidenceKind, String requestedAt,
                          int topComparisonDisplayLimit, List<Period> periods, String metricsState,
                          List<Group> comparisons, List<MaterialRow> newMaterials,

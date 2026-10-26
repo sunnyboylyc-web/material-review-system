@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import App from '../App.vue'
 import { SyntheticMockAdapter } from '../adapters/syntheticMockAdapter'
-import { validateMaterialTypeResponse, validateReviewResponse } from '../adapters/httpDashboardAdapter'
+import { validateMaterialTypeResponse, validateReviewResponse, validateReviewMaterials } from '../adapters/httpDashboardAdapter'
 import type { DashboardDataAdapter } from '../adapters/dashboardAdapter'
 import type { PeriodPreferences } from '../adapters/periodPreferences'
 import type { ProjectModule, ReviewQuery } from '../domain/dashboard'
@@ -37,6 +37,14 @@ const adapter: DashboardDataAdapter = {
     const raw = await response.json()
     if (!response.ok || raw.evidenceKind !== 'SYNTHETIC') throw new Error('本地素材类型查询未完成，请检查日期。')
     return validateMaterialTypeResponse({...raw,evidenceKind:'CURRENT_FACTS'},projectId,query)
+  },
+  async fetchReviewMaterials(projectId,query) {
+    if(projectId!==project.id)throw new Error('合成预览项目不存在')
+    const params=new URLSearchParams({currentStart:query.current.start,currentEnd:query.current.end,previousStart:query.previous.start,previousEnd:query.previous.end})
+    const response=await fetch(`http://127.0.0.1:18082/review-materials?${params}`,{signal:AbortSignal.timeout(15000)})
+    const raw=await response.json()
+    if(!response.ok||raw.evidenceKind!=='SYNTHETIC')throw new Error('完整合成素材名录暂不可用')
+    return {...validateReviewMaterials({...raw,evidenceKind:'CURRENT_FACTS'},projectId,query),evidenceKind:'SYNTHETIC'}
   },
 }
 const defaults:ReviewQuery = {current:{start:'2026-01-01',end:'2026-01-10'},previous:{start:'2025-12-22',end:'2025-12-31'}}

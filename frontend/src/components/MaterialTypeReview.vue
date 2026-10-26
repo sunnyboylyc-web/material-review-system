@@ -8,6 +8,11 @@ import SpendCurve from './SpendCurve.vue'
 import DateRangePicker from './DateRangePicker.vue'
 import UiIcon from './UiIcon.vue'
 import { validRange } from '../time/ranges'
+import MaterialColumnFilter from './MaterialColumnFilter.vue'
+import MaterialFilterToolbar from './MaterialFilterToolbar.vue'
+import MaterialTestPeriodHelp from './MaterialTestPeriodHelp.vue'
+import { useMaterialDetailFilters } from '../composables/useMaterialDetailFilters'
+import type { FilterColumn } from '../domain/materialFilters'
 
 const props = defineProps<{ result: MaterialTypeReview; projectName: string; saved?: MaterialTypeSelection; load?: (query: MaterialTypeQuery) => Promise<MaterialTypeReview> }>()
 const emit = defineEmits<{ updated: [selection: MaterialTypeSelection] }>()
@@ -91,12 +96,16 @@ const expanded = ref('')
 const limits = ref({ original: 10, mixed: 10, other: 10, business: 10, department: 10 })
 const options = computed(() => [...new Set([10,20,30,40,50,...Object.values(limits.value)])].sort((a,b) => a-b))
 const detailMetric = (key: 'CURRENT' | 'PREVIOUS', type: DetailKey, field: MetricKey) => type === 'business' || type === 'department' ? aiMetric(key,type,field) : metric(key,type,field)
-const rows = computed(() => {
+const sourceRows = computed(() => {
   const type = selected.value
   if (!type) return []
   const source = type === 'business' || type === 'department' ? displayed.value.ai?.materials?.[type] : displayed.value.materials[type]
-  return (source ?? []).slice(0, limits.value[type])
+  return source ?? []
 })
+const filterColumns:FilterColumn[]=[{key:'spend',label:'本期消耗',kind:'number'},{key:'previousSpend',label:'同素材上期消耗',kind:'number'},{key:'roi',label:'本期 ROI',kind:'number'},{key:'ctr',label:'点击率',kind:'percent'},{key:'cvr',label:'转化率',kind:'percent'},{key:'cpm',label:'CPM',kind:'number'},{key:'cpc',label:'CPC',kind:'number'},{key:'creationDate',label:'首次投放时间',kind:'date'}]
+const detailFilter=useMaterialDetailFilters(selected,sourceRows,row=>({materialId:row.materialId,materialName:row.materialName,values:{spend:row.metrics.spend,previousSpend:row.previousSpend,roi:row.metrics.roi,ctr:row.metrics.ctr,cvr:row.metrics.cvr,cpm:row.metrics.cpm,cpc:row.metrics.cpc,creationDate:row.creationDate}}),filterColumns)
+const detailFilters=detailFilter.filters
+const rows=computed(()=>selected.value?detailFilter.matched.value.slice(0,limits.value[selected.value]):[])
 const emptyMessage = computed(() => !selected.value || detailMetric('CURRENT',selected.value,'spend').status !== 'VALID'
   ? '当前数据不可用，无法确定素材明细。' : partial.value ? '已到数据中暂无符合条件的素材，仍有缺失或待核。' : '本周期无符合双日期条件的素材。')
 let returnFocus: HTMLElement | null = null
@@ -109,7 +118,8 @@ async function open(type: DetailKey) {
 }
 function close() { const wasOpen = selected.value !== null; dialog.value?.close?.(); selected.value = null; expanded.value = ''; if (wasOpen) returnFocus?.focus() }
 function closeAll() { close(); closeAi() }
-watch(() => props.result, () => { closeAll(); if (!props.saved) { displayed.value = props.result; query.value = initialQuery(); committed.value = initialQuery() } })
+watch(() => props.result, () => { closeAll(); detailFilter.reset(); if (!props.saved) { displayed.value = props.result; query.value = initialQuery(); committed.value = initialQuery() } })
+watch(displayed,()=>detailFilter.reset())
 onBeforeUnmount(() => { queryRequest++; dialog.value?.close?.(); aiDialog.value?.close?.() })
 </script>
 
@@ -118,7 +128,7 @@ onBeforeUnmount(() => { queryRequest++; dialog.value?.close?.(); aiDialog.value?
     <form class="period-toolbar material-type-toolbar" aria-label="素材类型独立周期" @submit.prevent="refresh">
       <h3>素材类型数据</h3>
       <div class="material-type-date-grid"><DateRangePicker v-for="field in queryFields" :key="field.key" v-model="query[field.key]" :label="field.label" :disabled="loading" /></div>
-      <button type="submit" class="primary-button" :disabled="loading"><UiIcon name="refresh" :size="16"/>{{ loading ? '正在刷新…' : '刷新数据' }}</button>
+      <MaterialTestPeriodHelp/><button type="submit" class="primary-button" :disabled="loading"><UiIcon name="refresh" :size="16"/>{{ loading ? '正在刷新…' : '刷新数据' }}</button>
     </form>
     <p class="module-note material-type-scope">统计日期按本周期／上周期筛选，首次投放日期按对应素材测试周期筛选；只更新 05、06。</p>
     <p v-if="pending" class="form-error" role="status">条件已修改，请刷新数据；05、06 仍显示上次结果。</p>
@@ -158,9 +168,9 @@ onBeforeUnmount(() => { queryRequest++; dialog.value?.close?.(); aiDialog.value?
         <button ref="closeButton" type="button" aria-label="关闭类型素材明细" @click="close">×</button>
       </header>
       <div class="pr-dialog-body"><div class="pr-dialog-summary"><span v-for="item in columns" :key="item.key">本期{{ item.label }} <b><MetricValue :result="detailMetric('CURRENT',selected,item.key)" :format="item.format" /></b></span></div>
-        <div class="table-shell"><table class="business-table pr-detail-table"><thead><tr><th>本期素材</th><th>本期消耗</th><th>同素材上期消耗</th><th>本期 ROI</th><th>点击率</th><th>转化率</th><th>CPM</th><th>CPC</th><th>展开</th></tr></thead>
+        <MaterialFilterToolbar v-model="detailFilters" :total="sourceRows.length" :matched="detailFilter.matched.value.length" :displayed="rows.length"/><div class="detail-date-filter"><MaterialColumnFilter :column="filterColumns[7]" :model-value="detailFilters.columns.creationDate" :options="detailFilter.options(filterColumns[7])" @update:model-value="value=>detailFilter.setColumn('creationDate',value)" /></div><div class="table-shell"><table class="business-table pr-detail-table"><thead><tr><th>本期素材</th><th><MaterialColumnFilter :column="filterColumns[0]" :model-value="detailFilters.columns.spend" :options="detailFilter.options(filterColumns[0])" @update:model-value="value=>detailFilter.setColumn('spend',value)" /></th><th><MaterialColumnFilter :column="filterColumns[1]" :model-value="detailFilters.columns.previousSpend" :options="detailFilter.options(filterColumns[1])" @update:model-value="value=>detailFilter.setColumn('previousSpend',value)" /></th><th><MaterialColumnFilter :column="filterColumns[2]" :model-value="detailFilters.columns.roi" :options="detailFilter.options(filterColumns[2])" @update:model-value="value=>detailFilter.setColumn('roi',value)" /></th><th><MaterialColumnFilter :column="filterColumns[3]" :model-value="detailFilters.columns.ctr" :options="detailFilter.options(filterColumns[3])" @update:model-value="value=>detailFilter.setColumn('ctr',value)" /></th><th><MaterialColumnFilter :column="filterColumns[4]" :model-value="detailFilters.columns.cvr" :options="detailFilter.options(filterColumns[4])" @update:model-value="value=>detailFilter.setColumn('cvr',value)" /></th><th><MaterialColumnFilter :column="filterColumns[5]" :model-value="detailFilters.columns.cpm" :options="detailFilter.options(filterColumns[5])" @update:model-value="value=>detailFilter.setColumn('cpm',value)" /></th><th><MaterialColumnFilter :column="filterColumns[6]" :model-value="detailFilters.columns.cpc" :options="detailFilter.options(filterColumns[6])" @update:model-value="value=>detailFilter.setColumn('cpc',value)" /></th><th>展开</th></tr></thead>
           <tbody><template v-for="row in rows" :key="row.materialId"><tr><td><strong>{{ row.rank }}. {{ row.materialName ?? '名称未知' }}</strong><small>{{ formatMaterialLabel(row.materialId,row.materialName) }} · 首次投放时间 {{ formatCreationDate(row.creationDate) }}</small></td><td><MetricValue :result="row.metrics.spend" /></td><td><MetricValue :result="row.previousSpend" /></td><td><MetricValue :result="row.metrics.roi" /></td><td><MetricValue :result="row.metrics.ctr" format="percent" /></td><td><MetricValue :result="row.metrics.cvr" format="percent" /></td><td><MetricValue :result="row.metrics.cpm" /></td><td><MetricValue :result="row.metrics.cpc" /></td><td><button class="expand-button" type="button" :aria-expanded="expanded === row.materialId" :aria-label="`${expanded === row.materialId ? '收起' : '展开'}第 ${row.rank} 名类型素材消耗曲线`" @click="expanded = expanded === row.materialId ? '' : row.materialId">{{ expanded === row.materialId ? '收起' : '展开' }}</button></td></tr>
-          <tr v-if="expanded === row.materialId" class="pr-expanded"><td colspan="9"><h4>本周期逐日消耗</h4><SpendCurve :days="row.dailySpend" expanded label="类型素材本期逐日消耗，缺失日期断线"/><div class="daily-value-list"><span v-for="day in row.dailySpend" :key="day.date">{{ day.date }} <MetricValue :result="day.spend" /></span></div></td></tr></template><tr v-if="!rows.length"><td colspan="9">{{ emptyMessage }}</td></tr></tbody>
+          <tr v-if="expanded === row.materialId" class="pr-expanded"><td colspan="9"><h4>本周期逐日消耗</h4><SpendCurve :days="row.dailySpend" expanded label="类型素材本期逐日消耗，缺失日期断线"/><div class="daily-value-list"><span v-for="day in row.dailySpend" :key="day.date">{{ day.date }} <MetricValue :result="day.spend" /></span></div></td></tr></template><tr v-if="!rows.length"><td colspan="9">{{ detailFilter.active.value ? '没有符合当前筛选条件的素材，请调整或清除筛选。' : emptyMessage }}</td></tr></tbody>
         </table></div><p class="module-note">同素材上期消耗按上周期统计日期及上周期素材测试周期共同筛选；两组筛选独立生效。</p>
       </div>
     </dialog>
@@ -168,7 +178,7 @@ onBeforeUnmount(() => { queryRequest++; dialog.value?.close?.(); aiDialog.value?
 </template>
 
 <style scoped>
-.material-type-table-shell{border:1px solid #2e3449;border-radius:12px;background:#141827;margin-bottom:30px}
+.detail-date-filter{display:flex;justify-content:flex-end;margin:-6px 0 14px}.material-type-table-shell{border:1px solid #2e3449;border-radius:12px;background:#141827;margin-bottom:30px}
 .material-type-toolbar{border:1px solid var(--line,#30364b);border-radius:12px;padding:20px;margin:32px 0 10px;gap:20px}.material-type-toolbar h3{font-size:20px}.material-type-date-grid{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:14px 22px;flex:1}.material-type-scope{margin-bottom:24px}@media(max-width:900px){.material-type-date-grid{grid-template-columns:1fr;width:100%}.material-type-toolbar{align-items:flex-start}}
 .material-type-table{width:100%;min-width:850px}
 .material-type-review .material-type-table th,.material-type-review .material-type-table td{text-align:center;vertical-align:middle;padding:20px 16px}

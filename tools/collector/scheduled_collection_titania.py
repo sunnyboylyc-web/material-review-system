@@ -62,7 +62,7 @@ def save(path, value):
 def slot(now):
     local = now.astimezone(ZoneInfo('Asia/Shanghai'))
     hour_slot = local.hour in (8, 9, 10, 11, 12) and local.minute < 5
-    half_hour_slot = local.hour in (8, 9, 10) and 30 <= local.minute < 35
+    half_hour_slot = local.hour in (8, 9, 10, 11) and 30 <= local.minute < 35
     require(hour_slot or half_hour_slot, 'OUTSIDE_SCHEDULE_SLOT')
     # Preserve historical whole-hour identities; half-hour attempts are distinct.
     point = local.strftime('%Y-%m-%dT%H') + (':30' if half_hour_slot else '')

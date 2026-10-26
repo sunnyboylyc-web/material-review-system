@@ -5,6 +5,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DashboardControllerTest {
+    @org.junit.jupiter.api.Test void completeMaterialEndpointRejectsDatesBeforeReadingAndChecksAccountIdentity() {
+        var reads=new java.util.concurrent.atomic.AtomicInteger();
+        var controller=new DashboardController(ProjectDirectory.single("synthetic-account"),a->{reads.incrementAndGet();return new cn.datadashboard.calculation.DashboardModels.Snapshot("other-account",java.util.List.of(),java.util.List.of());});
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,()->controller.reviewMaterials("sampleproject","bad","2026-01-10","2025-12-22","2025-12-31"));
+        org.junit.jupiter.api.Assertions.assertEquals(0,reads.get());
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,()->controller.reviewMaterials("sampleproject","2026-01-01","2026-01-10","2025-12-22","2025-12-31"));
+    }
     @Test void independentTypeQueryValidatesAllFourRangesBeforeReadingAndRejectsCrossAccount() {
         var calls = new AtomicInteger();
         var input = cn.datadashboard.calculation.DashboardCalculator.prepare(
