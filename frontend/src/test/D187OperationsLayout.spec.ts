@@ -87,7 +87,7 @@ describe('D187 semantic operation groups', () => {
   })
   it('keeps all collection rules in the collection group, no execution buttons', () => {
     const panel = mount(CollectionOperationsPanel, { props: { active: true, preview: true } })
-    for (const text of ['09:00、09:30、10:00、10:30、11:00、11:30、12:00', '每页最多延迟重试五次', '每个项目每轮最多延迟重试十二次', '首次成功不代表平台最终数据']) expect(panel.text()).toContain(text)
+    for (const text of ['09:00、09:30、10:00、10:30、11:00、11:30、12:00', '最多追加2次', '共用8次总上限', '首次成功不代表平台最终数据']) expect(panel.text()).toContain(text)
     expect(panel.findAll('button')).toHaveLength(0); panel.unmount()
   })
   it('preserves a selected manual file while another section is active without a hidden GET', async () => {

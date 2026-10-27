@@ -28,11 +28,11 @@ class GateSequenceTest(unittest.TestCase):
             calls.append(seconds)
             self.permit(len(calls))
         gate = collect.scheduler_gate(self.root, str(self.path), sleep)
-        for sequence in range(1, 13):
+        for sequence in range(1, 9):
             gate(sequence)
             self.assertEqual(sequence, len(calls))
         with self.assertRaises(collect.Rejected):
-            gate(13)
+            gate(9)
 
     def test_future_permit_rejected(self):
         gate = collect.scheduler_gate(self.root, str(self.path))

@@ -25,6 +25,7 @@ class Fake:
         args = params['arguments']
         dims = {k: {'Value': '7', 'ValueStr': 'sample'} for k in args['dimensions']}
         dims['stat_time_day']['ValueStr'] = args['start_time'][:10]
+        if 'material_create_time_v2' in dims:dims['material_create_time_v2']['ValueStr']='2019-12-01 00:00:00'
         metrics = {k: {'Value': 0} for k in args['metrics']}
         row = {'dimensions': dims, 'metrics': metrics}
         response = {'result': {'structuredContent': {'code': 0, 'request_id': 'synthetic-request',
@@ -195,7 +196,7 @@ class CollectorTest(unittest.TestCase):
         self.assertEqual(original, row)
         self.assertTrue(all(result[key] is None for key in c.OPTIONAL_DESCRIPTORS))
         self.assertEqual('0', result[c.SORT])
-        for key in ('stat_time_day', 'material_id', 'material_create_time_v2'):
+        for key in ('stat_time_day', 'material_id'):
             with self.subTest(key=key):
                 invalid = copy.deepcopy(row)
                 invalid['dimensions'].pop(key)
@@ -413,19 +414,19 @@ class CollectorTest(unittest.TestCase):
         gates = []
         def gate(sequence):
             self.assertEqual(1, sequence)
-            self.assertEqual([5], sleeps)
+            self.assertEqual([60], sleeps)
             self.assertEqual(1, len(requests))
             gates.append('parent-permitted')
         result = c.execute(self.root, self.path, 'synthetic', True, transport=Retry(), sleeper=wait, retry_gate=gate)
         self.assertEqual('COLLECTED_NOT_IMPORTED', result['status'])
-        self.assertEqual([5], sleeps)
+        self.assertEqual([60], sleeps)
         self.assertEqual(['parent-permitted'], gates)
         self.assertEqual(requests[0], requests[1])
         run = Path(result['receipt']).parent
         self.assertEqual('RETRY_WAIT', c.decode((run/'retry-wait.json').read_bytes())['status'])
         self.assertEqual(0, c.decode((run/'retry-finished.json').read_bytes())['numericCode'])
 
-    def test_persistent_51010_only_six_calls_and_no_publication(self):
+    def test_persistent_51010_only_three_calls_and_no_publication(self):
         calls = []
         class Always(Fake):
             def rpc(self, method, params):
@@ -436,8 +437,8 @@ class CollectorTest(unittest.TestCase):
         sleeps = []
         result = c.execute(self.root, self.path, 'synthetic', True, transport=Always(), sleeper=sleeps.append)
         self.assertEqual('FAILED', result['status'])
-        self.assertEqual(6, len(calls))
-        self.assertEqual([5, 10, 20, 40, 60], sleeps)
+        self.assertEqual(3, len(calls))
+        self.assertEqual([60, 60], sleeps)
         self.assertTrue(all(item == calls[0] for item in calls))
         receipt = c.decode(Path(result['receipt']).read_bytes())
         self.assertEqual(self.project['id'], receipt['projectRef'])
@@ -457,36 +458,31 @@ class CollectorTest(unittest.TestCase):
         sleeps = []
         result = c.execute(self.root, self.path, 'synthetic', True, transport=Later(), sleeper=sleeps.append)
         self.assertEqual('COLLECTED_NOT_IMPORTED', result['status'])
-        self.assertEqual([5, 5], sleeps)
+        self.assertEqual([60, 60], sleeps)
         self.assertEqual(7, len(calls))
         run = Path(result['receipt']).parent
         self.assertEqual(1, c.decode((run/'retry-wait.json').read_bytes())['retryCount'])
         self.assertEqual(2, c.decode((run/'retry-02-wait.json').read_bytes())['retryCount'])
         self.assertEqual(0, c.decode((run/'retry-02-finished.json').read_bytes())['numericCode'])
 
-    def test_51010_project_budget_twelve_then_fourth_page_stops(self):
-        attempts = {}
+    def test_four_error_budgets_shared_across_groups_stop_at_eight(self):
+        attempts={}
         class EachGroup(Fake):
-            def rpc(self, method, params):
-                if method == 'tools/call':
-                    key = tuple(params['arguments']['metrics'])
-                    attempts[key] = attempts.get(key, 0) + 1
-                    if attempts[key] <= 4:
-                        return {'result': {'structuredContent': {'code': 51010}}}
-                return super().rpc(method, params)
-        sleeps, gates = [], []
-        result = c.execute(self.root, self.path, 'synthetic', True, transport=EachGroup(), sleeper=sleeps.append, retry_gate=gates.append)
-        self.assertEqual('FAILED', result['status'])
-        self.assertEqual([5, 10, 20, 40] * 3, sleeps)
-        self.assertEqual(list(range(1, 13)), gates)
-        self.assertEqual([5, 5, 5, 1], list(attempts.values()))
-        run = Path(result['receipt']).parent
-        self.assertTrue((run/'retry-12-finished.json').exists())
-        self.assertFalse((run/'retry-13-wait.json').exists())
-        facts = c.decode((run/'receipt.json').read_bytes())['diagnostic']['facts']
-        self.assertEqual(12, facts['retryCount'])
-        self.assertEqual(0, facts['pageRetryCount'])
-        self.assertFalse((run/'publication').exists())
+            def rpc(self,method,params):
+                if method=='tools/call':
+                    key=tuple(params['arguments']['metrics'])
+                    if key not in attempts:attempts[key]=0
+                    group=list(attempts).index(key);attempts[key]+=1
+                    if attempts[key]<=2 or group==4:
+                        return {'result':{'structuredContent':{'code':[51010,40100,40000,400153,51010][group]}}}
+                return super().rpc(method,params)
+        sleeps,gates=[],[]
+        result=c.execute(self.root,self.path,'synthetic',True,transport=EachGroup(),sleeper=sleeps.append,retry_gate=gates.append)
+        self.assertEqual('FAILED',result['status']);self.assertEqual([60]*8,sleeps)
+        self.assertEqual(list(range(1,9)),gates);self.assertEqual([3,3,3,3,1],list(attempts.values()))
+        run=Path(result['receipt']).parent
+        self.assertTrue((run/'retry-08-finished.json').exists());self.assertFalse((run/'retry-09-wait.json').exists())
+        self.assertEqual(8,c.decode((run/'receipt.json').read_bytes())['diagnostic']['facts']['retryCount'])
 
     def test_second_page_persistent_failure_stops_at_page_budget(self):
         calls = []
@@ -500,14 +496,14 @@ class CollectorTest(unittest.TestCase):
         sleeps = []
         result = c.execute(self.root, self.path, 'synthetic', True, transport=LaterFailure(), sleeper=sleeps.append)
         self.assertEqual('FAILED', result['status'])
-        self.assertEqual([5, 5, 10, 20, 40, 60], sleeps)
-        self.assertEqual(8, len(calls))
+        self.assertEqual([60, 60], sleeps)
+        self.assertEqual(4, len(calls))
         self.assertEqual(calls[2], calls[3])
         run = Path(result['receipt']).parent
-        self.assertFalse((run/'retry-07-wait.json').exists())
+        self.assertFalse((run/'retry-03-wait.json').exists())
         facts = c.decode((run/'receipt.json').read_bytes())['diagnostic']['facts']
-        self.assertEqual(6, facts['retryCount'])
-        self.assertEqual(5, facts['pageRetryCount'])
+        self.assertEqual(2, facts['retryCount'])
+        self.assertEqual(0, facts['pageRetryCount'])
 
     def test_51010_later_page_can_retry_without_repeating_previous_page(self):
         attempts = {}
@@ -530,7 +526,7 @@ class CollectorTest(unittest.TestCase):
         sleeps = []
         result = c.execute(self.root, self.path, 'synthetic', True, transport=TwoPages(), sleeper=sleeps.append)
         self.assertEqual('COLLECTED_NOT_IMPORTED', result['status'])
-        self.assertEqual([5, 5], sleeps)
+        self.assertEqual([60, 60], sleeps)
         self.assertEqual(2, attempts[(True, 1)])
         self.assertEqual(2, attempts[(True, 2)])
 

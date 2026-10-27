@@ -388,8 +388,8 @@
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/operations/CollectionStatusReader.java",
-      "bytes": 7419,
-      "sha256": "6e42745890323dff57c4ada85b5b612a979aea945470d2edcefbaa50772daeeb"
+      "bytes": 9686,
+      "sha256": "5cd0868aede561a9263f2e9be614f279c7c26c2df3ebfbc5960c990f2729fd93"
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/operations/FactMissingDetails.java",
@@ -778,8 +778,8 @@
     },
     {
       "path": "backend/src/test/java/cn/datadashboard/operations/CollectionStatusReaderTest.java",
-      "bytes": 7596,
-      "sha256": "7c84e34fb0af1740b4e91cd63119b4a247d1f28a77b6de0d1f1bbf8de7e5d741"
+      "bytes": 9033,
+      "sha256": "9ec1c5111ae6223b42fd77cce8881883fc496cd69b4e3d5a3f2805dc2ee6c26e"
     },
     {
       "path": "backend/src/test/java/cn/datadashboard/operations/FactMissingDetailsTest.java",
@@ -860,6 +860,11 @@
       "path": "contracts/collected-data-export-v1.json",
       "bytes": 3586,
       "sha256": "9f28d47f521b6b4673157beeaafd3ff0f5da3f6afe1865b8b4b8e24bd78ab331"
+    },
+    {
+      "path": "contracts/collection-resilience-v1.json",
+      "bytes": 1418,
+      "sha256": "c3f2c08441c33685588075fda85ddef6b81b56411db71df2a5b66b36513d6b18"
     },
     {
       "path": "contracts/confirmed-metric-arithmetic-v1.json",
@@ -1048,8 +1053,8 @@
     },
     {
       "path": "frontend/src/adapters/httpCollectionStatusAdapter.ts",
-      "bytes": 3042,
-      "sha256": "3afc1008620cc17c4b6bab02a018c7b628332e32d445ea183f97c8eedc550abd"
+      "bytes": 3837,
+      "sha256": "ac4ab6200838071590c35b99a3ac53c8a0ba19d666ee95435bca683e0e9fa40b"
     },
     {
       "path": "frontend/src/adapters/httpConfigurationAdapter.ts",
@@ -1118,13 +1123,13 @@
     },
     {
       "path": "frontend/src/components/CollectionOperationsPanel.vue",
-      "bytes": 2454,
-      "sha256": "45a0f44d9eb77aae7b8dcf38d402cb3ab0c020ef162f469c95a7729a73ea8a70"
+      "bytes": 2964,
+      "sha256": "5d195879c7ab8b64f979d9d62b6713709b092b9599cf340c9ba2864b2a03ac54"
     },
     {
       "path": "frontend/src/components/CollectionStatusPanel.vue",
-      "bytes": 5703,
-      "sha256": "0c0d5b3e80e268726628666a454e867079cb3fda851ab314413341018bc5fd34"
+      "bytes": 7028,
+      "sha256": "94722dc495b0d10a743cb37066c02ea60d71d62ce2d9a813777952e2e8974e57"
     },
     {
       "path": "frontend/src/components/CollectionThemePanel.vue",
@@ -1468,8 +1473,8 @@
     },
     {
       "path": "frontend/src/test/CollectionStatusPanel.spec.ts",
-      "bytes": 5386,
-      "sha256": "0af6a6a2c6a6c207d0015d2b03256d807810946de336ae7172c479d68d9973cf"
+      "bytes": 6928,
+      "sha256": "8427e8642c3f15607bfcdc7b9464b00587de5aaefefc0a2022f474a90530f789"
     },
     {
       "path": "frontend/src/test/CollectionThemePanel.spec.ts",
@@ -1498,8 +1503,8 @@
     },
     {
       "path": "frontend/src/test/D187OperationsLayout.spec.ts",
-      "bytes": 8482,
-      "sha256": "1a5ac3aabda2de857ee6aa58f08bc0f71ee030b312acbea95902d20a5389e290"
+      "bytes": 8442,
+      "sha256": "84749b35b607bf5d620e9268436aabc3a6d848e3a75c74f5bba01e4d704b0b12"
     },
     {
       "path": "frontend/src/test/D187PreviewFixture.spec.ts",
@@ -1938,8 +1943,18 @@
     },
     {
       "path": "tools/collector/collect.py",
-      "bytes": 42230,
-      "sha256": "14c95e86aa55e0b10115827a331db612aa9981a19b9c1a98018f33ef61225bbd"
+      "bytes": 44486,
+      "sha256": "a6d80fa6e7da882700525d58a4db59ecbe0fb05b817c0a51ea58e66c57364f86"
+    },
+    {
+      "path": "tools/collector/collection_resilience.py",
+      "bytes": 11942,
+      "sha256": "db9bbcd6b32a28a51377c1b4371bb02697faa44103f6ba448611a0e618f702ad"
+    },
+    {
+      "path": "tools/collector/pending_materials.py",
+      "bytes": 23422,
+      "sha256": "5e91146a03d12a174deb9e1e37ac002ee9396c6d005f33cc43d41b75096c430a"
     },
     {
       "path": "tools/collector/prepare_project_day.py",
@@ -1958,13 +1973,13 @@
     },
     {
       "path": "tools/collector/scheduled_collection_titania.py",
-      "bytes": 33770,
-      "sha256": "4952fa3ccf9e8e6384231c1ca881b6bfa4e0acbc1fc398c1e70723c27522eb46"
+      "bytes": 36538,
+      "sha256": "d9d1578af4599a985ca1defb2d3d99ddf72eb17947318244876fa216f0dbaba9"
     },
     {
       "path": "tools/collector/test_collect.py",
-      "bytes": 42604,
-      "sha256": "f435084264d4706b38a9f74aafdd8c6c618e89dbea568d26c6f3439a6295531c"
+      "bytes": 42583,
+      "sha256": "86023051dcd82dac4657b97fbcd1f6957fed5185f049044d2cb442295986b4aa"
     },
     {
       "path": "tools/collector/test_d139_retry.py",
@@ -1973,18 +1988,23 @@
     },
     {
       "path": "tools/collector/test_d140_gate.py",
-      "bytes": 2278,
-      "sha256": "8e2670f5d05b4a6442f4bf566da45dd2177008eddc1eee6b9846a03559b7c26d"
+      "bytes": 2276,
+      "sha256": "7bf0d5739405cb514fe6a88f732099f321bd3140c60f91c6f99c502e047b1c5f"
     },
     {
       "path": "tools/collector/test_d224_backfill.py",
-      "bytes": 7431,
-      "sha256": "e68970bf48fff6078532b6335e34ce2f7de6166df7a60e46f51fe48d12ad0e55"
+      "bytes": 7434,
+      "sha256": "9d2a89f6feb7718f952ba93d92432b9b16928197cdf36ae39e97993d2072482b"
     },
     {
       "path": "tools/collector/test_d234_status_finish.py",
       "bytes": 2194,
       "sha256": "cbe560786d834674b9aaa71bf74cc1f1e0267b599417bcaa34c4121b5caec5b1"
+    },
+    {
+      "path": "tools/collector/test_d238_resilience.py",
+      "bytes": 16439,
+      "sha256": "f3272ea1d908ca6892e734fe66239e1b3ecc7852bdf4b6e55bfdb11d41a04ed0"
     },
     {
       "path": "tools/collector/test_prepare_project_day.py",
@@ -1998,8 +2018,8 @@
     },
     {
       "path": "tools/collector/test_scheduled_collection_titania.py",
-      "bytes": 3446,
-      "sha256": "d171645bc0fa15822b9796abdaaa83465be9fd6f8d12b1963edae85b9429ab8e"
+      "bytes": 5220,
+      "sha256": "3cacae095df9875174b1c42b03bf99a9060c16084cd1e59787dbb20b8fe849df"
     },
     {
       "path": "tools/dev/prepare_public_test_fixtures.py",

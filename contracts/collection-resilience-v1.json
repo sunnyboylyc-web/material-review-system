@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "collection-resilience-v1",
+  "identity": "verified Douyin identity plus material ID within verified account lineage",
+  "creationTime": {
+    "prefer": "current observed value",
+    "fallback": "matching hash-verified historical source with verified anchor identity",
+    "conflictingHistory": "reject",
+    "unresolvedPositiveOrUnknownSpend": "reject whole project-day",
+    "unresolvedZeroSpend": "defer only when other required core metrics are also known zero",
+    "rawResponses": "immutable"
+  },
+  "pending": {
+    "window": "dynamic T-2 through T-8 inclusive, Asia/Shanghai",
+    "alreadyImportedDays": "inspect deferred markers separately",
+    "completion": "append-only new day version with CAS and full readback",
+    "expired": "retain for manual processing",
+    "manualData": "verify existing rows and close resolved markers, including expired ones"
+  },
+  "requests": {
+    "minimumGlobalSpacingSeconds": 2,
+    "concurrency": 1,
+    "rateLimitGlobalPauseSeconds": 60
+  },
+  "retries": {
+    "scope": "one project and date per scheduled round, shared across pages, groups, anchor lookup and both backfill themes",
+    "perCodeAdditionalAttempts": {
+      "51010": 2,
+      "40100": 2,
+      "40000": 2,
+      "400153": 2
+    },
+    "waitSeconds": 60,
+    "totalBusinessRetryLimit": 8,
+    "network": "bounded existing transport retry, no additional business retry stacking"
+  }
+}

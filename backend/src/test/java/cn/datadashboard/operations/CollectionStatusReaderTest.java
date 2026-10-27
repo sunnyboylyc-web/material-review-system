@@ -87,4 +87,25 @@ class CollectionStatusReaderTest {
         catch (java.io.IOException | UnsupportedOperationException denied) { org.junit.jupiter.api.Assumptions.abort("Symlink privilege unavailable"); }
         assertEquals("UNAVAILABLE", reader().read().get("observation"));
     }
+    @Test void pendingMaterialSummaryIsBoundedAndNeverIncludesRawIdentities() throws Exception {
+        write(sample("COMPLETE", "2026-10-16T01:59:00Z", "[]"));
+        Path pending=root.resolve(".local/collection-scheduler/pending-status.json");
+        Files.writeString(pending,"""
+            {"schemaVersion":"pending-material-status-v1","updatedAt":"2026-10-16T01:59:00Z",
+             "projects":[{"projectId":"p1","pendingCount":3,"manualCount":1,"oldestStatDate":"2026-10-10"}]}
+            """);
+        var result=reader().read();assertEquals("OBSERVED",result.get("observation"));
+        assertTrue(result.get("pendingSummary").toString().contains("pendingCount=3"));
+        assertFalse(result.toString().contains("SECRET_ACCOUNT"));
+        Files.writeString(pending,Files.readString(pending).replace("\"manualCount\":1","\"manualCount\":4"));
+        assertEquals("UNAVAILABLE",reader().read().get("observation"));
+    }
+    @Test void newAnchorRateLimitCodeAndPendingCountAreProjected() throws Exception {
+        String item=project("p1").replace("51010","PLATFORM_40100_ANCHOR_PAGE_1_RETRIES_2");
+        item=item.substring(0,item.length()-1)+",\"pendingCount\":2}";
+        write(sample("PARTIAL","2026-10-16T01:59:00Z","["+item+"]"));
+        String value=reader().read().toString();assertTrue(value.contains("pendingCount=2"));
+        assertTrue(value.contains("PLATFORM_40100_ANCHOR_PAGE_1_RETRIES_2"));
+    }
+
 }

@@ -12,6 +12,9 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib import request, parse
+from collection_resilience import (SharedRequestControl, HistoricalCreationLookup,
+    ResilienceRejected, resolve_creation_dates)
+import contextlib
 
 PROFILE = Path('backend/src/main/resources/configuration/material-33-v1.json')
 TOOL = 'qianchuan_report_uni_promotion_data_get_v1'
@@ -21,10 +24,11 @@ SHANGHAI = timezone(timedelta(hours=8))
 ERROR_CODES = {'INPUT_REJECTED', 'CREDENTIAL_REJECTED', 'TRANSPORT_FAILED', 'PROTOCOL_REJECTED',
                'TOOL_UNAVAILABLE', 'PAGE_REJECTED', 'ROW_REJECTED', 'GROUP_MISMATCH', 'COLLECTION_FAILED',
                'ANCHOR_PAGE_INVALID', 'ANCHOR_NOT_FOUND', 'ANCHOR_AMBIGUOUS', 'ANCHOR_PROVIDER_REJECTED',
-               'BACKFILL_THEME_CONFLICT'}
+               'BACKFILL_THEME_CONFLICT', 'CREATION_TIME_UNRESOLVED_POSITIVE_OR_UNKNOWN',
+               'ZERO_SPEND_HAS_OTHER_CONTRIBUTIONS', 'HISTORY_ROW_HASH_MISMATCH', 'CREATION_TIME_HISTORY_CONFLICT'}
 OPTIONAL_DESCRIPTORS = {'roi2_material_video_name', 'roi2_material_video_type'}
-RETRY_51010_DELAYS = (5, 10, 20, 40, 60)
-MAX_PROJECT_RETRIES = 12
+RETRY_51010_DELAYS = (60, 60)
+MAX_PROJECT_RETRIES = 8
 
 
 def error_code(error, fallback='COLLECTION_FAILED'):
@@ -194,7 +198,8 @@ class NoRedirect(request.HTTPRedirectHandler):
 
 
 class HttpTransport:
-    def __init__(self, key):
+    def __init__(self, key, control=None):
+        self.control = control
         self.key = key
         self.last_body = None
         self.safe_body = None
@@ -202,6 +207,10 @@ class HttpTransport:
         self.opener = request.build_opener(request.ProxyHandler({}), NoRedirect())
 
     def rpc(self, method, params):
+        with self.control.request() if self.control else contextlib.nullcontext():
+            return self._rpc(method, params)
+
+    def _rpc(self, method, params):
         self.last_body = None
         self.safe_body = None
         self.diagnostic.update(stage=method if method in ('initialize', 'notifications/initialized', 'tools/list', 'tools/call') else 'invalid-method')
@@ -263,7 +272,7 @@ def flatten(row, group, date):
     result = {}
     for section, expected in (('dimensions', group['dimensions']), ('metrics', group['metrics'])):
         values = row[section]
-        optional = OPTIONAL_DESCRIPTORS if section == 'dimensions' else set()
+        optional = OPTIONAL_DESCRIPTORS | {'material_create_time_v2'} if section == 'dimensions' else set()
         require(isinstance(values, dict) and set(values).issubset(expected)
                 and set(expected) - set(values) <= optional, 'ROW_REJECTED')
         for key in expected:
@@ -301,8 +310,75 @@ def write_bytes_once(path, data):
     require(path.read_bytes() == data)
 
 
-def resolve_anchor(transport, project, run):
+def business_object(raw):
+    result = raw.get('result', {})
+    if 'structuredContent' in result: return result['structuredContent']
+    if 'code' in result: return result
+    content = result.get('content', [])
+    if len(content) == 1 and isinstance(content[0], dict) and isinstance(content[0].get('text'), str):
+        return decode(content[0]['text'])
+    return result
+
+
+def call_with_retry(transport, params, run, budget, group, page, sleeper, gate):
+    frozen = copy.deepcopy(params)
+    page_retries = 0
+    network_retries = 0
+    business_retried = False
+    buffered = None
+    while True:
+        try:
+            if buffered is None:
+                raw = transport.rpc('tools/call', frozen)
+            else:
+                raw, buffered = buffered, None
+        except Rejected as error:
+            if str(error) != 'TRANSPORT_FAILED' or business_retried or network_retries >= 2:
+                raise
+            network_retries += 1
+            sleeper(3 * network_retries)
+            continue
+        sc = business_object(raw)
+        code = sc.get('code') if isinstance(sc, dict) else None
+        if code == 40100 and getattr(transport, 'control', None):
+            transport.control.pause(60)
+        if code not in (51010, 40100, 40000, 400153) or budget.get(code, 0) <= 0:
+            return raw
+        budget[code] -= 1
+        budget['used'] += 1
+        page_retries += 1
+        sequence = budget['used']
+        prefix = 'retry-' if sequence == 1 else 'retry-%02d-' % sequence
+        retry = dict(status='RETRY_WAIT', providerCode=code, retryCount=sequence,
+            pageRetryCount=page_retries, maxProjectRetries=8, delaySeconds=60,
+            group=group, page=page, globalPause=code == 40100,
+            requestSha256=sha(encoded(frozen)),
+            retryNotBefore=(datetime.now(timezone.utc)+timedelta(seconds=60)).isoformat())
+        if isinstance(transport, HttpTransport) and transport.safe_body is not None:
+            write_bytes_once(run/(prefix+str(code)+'-response.http.json'), transport.safe_body)
+        write_once(run/(prefix+'wait.json'), retry)
+        print(json.dumps({k:retry[k] for k in ('status','providerCode','retryCount','pageRetryCount',
+              'maxProjectRetries','delaySeconds','group','page','globalPause','retryNotBefore')}), flush=True)
+        sleeper(60)
+        if gate: gate(sequence)
+        require(params == frozen, 'INPUT_REJECTED')
+        write_once(run/(prefix+'started.json'), dict(status='RETRY_RUNNING',retryCount=sequence,requestSha256=retry['requestSha256']))
+        print(json.dumps(dict(status='RETRY_RUNNING',group=group,page=page,retryCount=sequence)),flush=True)
+        business_retried = True
+        # The next iteration makes exactly one retry, records it, and then evaluates its code.
+        try:
+            raw = transport.rpc('tools/call', frozen)
+        except Rejected:
+            raise
+        returned = business_object(raw)
+        write_once(run/(prefix+'finished.json'), dict(status='RETRY_RETURNED',retryCount=sequence,
+            group=group,page=page,**code_facts(returned.get('code') if isinstance(returned,dict) else None)))
+        buffered = raw  # Evaluate this response next without another network call.
+
+
+def resolve_anchor(transport, project, run, budget=None, sleeper=time.sleep, gate=None):
     """Resolve exact public ID from the complete authorized list; never first-match fallback."""
+    budget = budget if budget is not None else {51010:2,40100:2,40000:2,400153:2,'used':0}
     public_id = project.get('publicDouyinId')
     require(isinstance(public_id, str) and re.fullmatch(r'[A-Za-z0-9_.-]{1,64}', public_id))
     diagnostic = transport.diagnostic
@@ -310,10 +386,10 @@ def resolve_anchor(transport, project, run):
     directory.mkdir()
     matches, seen, baseline, count = [], set(), None, 0
     for page in range(1, 101):
-        diagnostic.update(stage='anchor-resolution', rule='ANCHOR_CALL', page=page, facts={})
-        response = transport.rpc('tools/call', {'name': ANCHOR_TOOL, 'arguments': {
+        diagnostic.update(stage='anchor-resolution', rule='ANCHOR_CALL', group='anchor', page=page, facts={})
+        response = call_with_retry(transport, {'name': ANCHOR_TOOL, 'arguments': {
             'advertiser_id': project['advertiserId'], 'filtering': {'marketing_goal': 'LIVE_PROM_GOODS',
-            'scene': 'CREATE', 'search_key_words': public_id}, 'page': page, 'page_size': 100}})
+            'scene': 'CREATE', 'search_key_words': public_id}, 'page': page, 'page_size': 100}}, run, budget, 'anchor', page, sleeper, gate)
         diagnostic['stage'] = 'anchor-resolution'
         result = response.get('result', {})
         if 'structuredContent' in result:
@@ -374,6 +450,7 @@ def resolve_anchor(transport, project, run):
 
 
 def collect(transport, plan, project, profile, run, sleeper=time.sleep, retry_gate=None, backfill_budget=None):
+    backfill_budget = backfill_budget if backfill_budget is not None else {51010:2,40100:2,40000:2,400153:2,'used':0}
     diagnostic = transport.diagnostic = {'stage': 'initialize', 'rule': 'INITIALIZE', 'facts': {}}
     initialized = transport.rpc('initialize', {'protocolVersion': '2024-11-05', 'capabilities': {},
                                               'clientInfo': {'name': 'scsj-local-collector', 'version': '1'}})
@@ -385,13 +462,13 @@ def collect(transport, plan, project, profile, run, sleeper=time.sleep, retry_ga
     require(TOOL in [t.get('name') for t in listed.get('result', {}).get('tools', [])], 'TOOL_UNAVAILABLE')
     if project.get('publicDouyinId'):
         require(ANCHOR_TOOL in [t.get('name') for t in listed.get('result', {}).get('tools', [])], 'TOOL_UNAVAILABLE')
-        resolved_anchor = resolve_anchor(transport, project, run)
+        resolved_anchor = resolve_anchor(transport, project, run, backfill_budget, sleeper, retry_gate)
         require(not project.get("expectedAwemeId") or project["expectedAwemeId"] == resolved_anchor, "ANCHOR_AMBIGUOUS")
         transport.resolved_anchor = resolved_anchor
         project = dict(project, douyinIds=[resolved_anchor])
     all_groups, summaries = {}, []
     delayed_retry_count = backfill_budget.get('used', 0) if backfill_budget is not None else 0
-    max_retries = 7 if backfill_budget is not None else MAX_PROJECT_RETRIES
+    max_retries = MAX_PROJECT_RETRIES
     raw_dir = run / 'raw'
     raw_dir.mkdir()
     for group in profile['groups']:
@@ -406,57 +483,11 @@ def collect(transport, plan, project, profile, run, sleeper=time.sleep, retry_ga
                     'filters': [{'field': 'anchor_id', 'operator': 7, 'values': project['douyinIds']}] +
                                [{'field': k, 'operator': 7, 'values': [v]} for k, v in profile['fixedFilters'].items()],
                     'order_by': [{'field': SORT, 'order_type': 'DESC'}], 'page': page, 'page_size': group['pageSize']}
-            delayed_request = False
+            raw = call_with_retry(transport, {'name': TOOL, 'arguments': args}, run,
+                                  backfill_budget, group['name'], page, sleeper, retry_gate)
+            sc = business_object(raw)
+            delayed_retry_count = backfill_budget['used']
             page_retry_count = 0
-            for attempt in range(3):
-                try:
-                    raw = transport.rpc('tools/call', {'name': TOOL, 'arguments': args})
-                    sc = raw.get('result', {}).get('structuredContent', raw.get('result', {}))
-                    checked(isinstance(sc, dict), diagnostic, 'BUSINESS_OBJECT', 'PROTOCOL_REJECTED', actualType=value_type(sc))
-                    while ((backfill_budget is not None and backfill_budget.get(sc.get('code'), 0) > 0)
-                           or (backfill_budget is None and sc.get('code') == 51010
-                               and delayed_retry_count < MAX_PROJECT_RETRIES and page_retry_count < len(RETRY_51010_DELAYS))):
-                        provider_code = sc['code']
-                        delay = 60 if backfill_budget is not None else RETRY_51010_DELAYS[page_retry_count]
-                        if backfill_budget is not None:
-                            backfill_budget[provider_code] -= 1
-                            backfill_budget['used'] = delayed_retry_count + 1
-                        page_retry_count += 1
-                        delayed_retry_count += 1
-                        delayed_request = True
-                        frozen = copy.deepcopy(args)
-                        prefix = 'retry-' if delayed_retry_count == 1 else 'retry-%02d-' % delayed_retry_count
-                        retry = {'status': 'RETRY_WAIT', 'providerCode': provider_code, 'retryCount': delayed_retry_count,
-                                 'pageRetryCount': page_retry_count, 'maxProjectRetries': max_retries,
-                                 'delaySeconds': delay, 'group': group['name'], 'page': page,
-                                 'requestSha256': sha(encoded(frozen)),
-                                 'retryNotBefore': (datetime.now(timezone.utc) + timedelta(seconds=delay)).isoformat()}
-                        if isinstance(transport, HttpTransport) and transport.safe_body is not None:
-                            write_bytes_once(run / (prefix + str(provider_code) + '-response.http.json'), transport.safe_body)
-                        write_once(run / (prefix + 'wait.json'), retry)
-                        print(json.dumps({k: retry[k] for k in ('status', 'providerCode', 'delaySeconds', 'group', 'page', 'retryNotBefore', 'retryCount', 'pageRetryCount', 'maxProjectRetries')}), flush=True)
-                        sleeper(delay)
-                        if retry_gate:
-                            retry_gate(delayed_retry_count)
-                        require(args == frozen, 'INPUT_REJECTED')
-                        write_once(run / (prefix + 'started.json'), dict(status='RETRY_RUNNING', retryCount=delayed_retry_count,
-                                   requestSha256=retry['requestSha256']))
-                        print(json.dumps(dict(status='RETRY_RUNNING', group=group['name'], page=page, retryCount=delayed_retry_count)), flush=True)
-                        raw = transport.rpc('tools/call', {'name': TOOL, 'arguments': frozen})
-                        sc = raw.get('result', {}).get('structuredContent', raw.get('result', {}))
-                        checked(isinstance(sc, dict), diagnostic, 'BUSINESS_OBJECT', 'PROTOCOL_REJECTED', actualType=value_type(sc))
-                        write_once(run / (prefix + 'finished.json'), dict(status='RETRY_RETURNED', retryCount=delayed_retry_count,
-                                   group=group['name'], page=page, **code_facts(sc.get('code'))))
-                    if delayed_request:
-                        break  # Never add legacy transport/40000 retries after a 51010 retry chain.
-                    if backfill_budget is None and sc.get('code') == 40000 and attempt < 2:
-                        sleeper(3 * (attempt + 1))
-                        continue
-                    break
-                except Rejected as error:
-                    if delayed_request or str(error) != 'TRANSPORT_FAILED' or attempt == 2:
-                        raise
-                    sleeper(3 * (attempt + 1))
             checked(sc.get('code') == 0, diagnostic, 'BUSINESS_CODE_ZERO', 'PROTOCOL_REJECTED',
                     retryCount=delayed_retry_count, pageRetryCount=page_retry_count, maxProjectRetries=max_retries,
                     **code_facts(sc.get('code')))
@@ -535,7 +566,7 @@ def collect(transport, plan, project, profile, run, sleeper=time.sleep, retry_ga
     return result, summaries, excluded, missing_groups
 
 
-def execute(root, plan_path, project_id, real=False, credentials=None, transport=None, sleeper=time.sleep, retry_gate=None, backfill=False):
+def execute(root, plan_path, project_id, real=False, credentials=None, transport=None, sleeper=time.sleep, retry_gate=None, backfill=False, history_lookup=None, completion_ids=None):
     root = root.resolve(strict=True)
     plan, project, profile, sources = load_plan(root, plan_path, project_id)
     if not real:
@@ -546,7 +577,8 @@ def execute(root, plan_path, project_id, real=False, credentials=None, transport
         secret = decode(credential_path.read_bytes())
         require(set(secret) == {'apiKey'} and isinstance(secret['apiKey'], str)
                 and 8 <= len(secret['apiKey']) <= 8192 and secret['apiKey'].strip() == secret['apiKey'], 'CREDENTIAL_REJECTED')
-        transport = HttpTransport(secret['apiKey'])
+        transport = HttpTransport(secret['apiKey'], SharedRequestControl(root/'.local/collection-scheduler'))
+        if history_lookup is None: history_lookup = HistoricalCreationLookup(root, project, plan['statDate'])
     runs = root / '.local' / 'collector-runs'
     runs.mkdir(exist_ok=True)
     require(runs.resolve() == runs)
@@ -561,18 +593,20 @@ def execute(root, plan_path, project_id, real=False, credentials=None, transport
     try:
         if backfill:
             # Routing is exclusive to gap repair, never changes saved configuration.
-            budget = {51010: 1, 40100: 2, 40000: 2, 400153: 2, 'used': 0}
+            budget = {51010: 2, 40100: 2, 40000: 2, 400153: 2, 'used': 0}
             profile = copy.deepcopy(plan['profile'])
             project = dict(project, collectionTheme='QUANYU')
             route = run / 'route-quanyu'; route.mkdir()
             a = collect(transport, plan, project, profile, route, sleeper, retry_gate, budget)
             a_profile = profile
+            a_anchor = getattr(transport,'resolved_anchor',None)
             profile = copy.deepcopy(profile)
             profile['dataTopic'] = 'OVERALL_ROI_LIVE_MATERIAL_VIDEO'
             profile['fixedFilters'] = {'roi2_material_type_v3': '3'}
             project = dict(project, collectionTheme='CHENGFANG')
             route = run / 'route-chengfang'; route.mkdir()
             b = collect(transport, plan, project, profile, route, sleeper, retry_gate, budget)
+            require(a_anchor == getattr(transport,'resolved_anchor',None), 'ANCHOR_AMBIGUOUS')
             # Both complete results are required, including when A already has rows.
             checks = {theme: {'complete': True, 'rows': len(value[0]), 'rowsSha256': sha(encoded(value[0]))}
                       for theme, value in (('QUANYU', a), ('CHENGFANG', b))}
@@ -590,6 +624,24 @@ def execute(root, plan_path, project_id, real=False, credentials=None, transport
             receipt.update(collectionMode='GAP_BACKFILL', collectionTheme=project['collectionTheme'], dataTopic=profile['dataTopic'])
         else:
             rows, pages, excluded, missing_groups = collect(transport, plan, project, profile, run, sleeper, retry_gate)
+        if completion_ids is not None:
+            require(backfill and isinstance(completion_ids,list) and 0 < len(completion_ids) <= 200000
+                    and len(set(completion_ids)) == len(completion_ids)
+                    and all(isinstance(x,str) and 0 < len(x) <= 128 for x in completion_ids))
+            receipt['completionMaterialIds'] = sorted(completion_ids)
+            rows = [row for row in rows if row['material_id'] in set(completion_ids)]
+        if isinstance(history_lookup,HistoricalCreationLookup):
+            history_lookup.expected_aweme_id = getattr(transport,'resolved_anchor',None) or history_lookup.expected_aweme_id
+        transport.diagnostic = {'stage':'creation-time-resolution','rule':'CREATION_TIME_VERIFICATION','facts':{}}
+        try:
+            rows, pending_rows, date_resolutions = resolve_creation_dates(rows, history_lookup, numeric)
+        except ResilienceRejected as error:
+            raise Rejected(str(error)) from None
+        creation_evidence = dict(schemaVersion='creation-time-resolution-v1',projectRef=project_id,
+            statDate=plan['statDate'],pending=pending_rows,resolutions=date_resolutions)
+        write_once(run/'creation-time-resolution.json',creation_evidence)
+        receipt['creationTimeEvidence'] = evidence(run/'creation-time-resolution.json')
+        receipt['pendingCreationTimeCount'] = len(pending_rows)
         transport.diagnostic = {'stage': 'publication', 'rule': 'SOURCE_HASH_AND_OUTPUT', 'facts': {}}
         if isinstance(transport, HttpTransport):
             transport.safe_body = None
@@ -676,11 +728,13 @@ def main():
     parser.add_argument('--credentials')
     parser.add_argument('--retry-gate')
     parser.add_argument('--backfill', action='store_true')
+    parser.add_argument('--completion-ids')
     args = parser.parse_args()
     try:
         root = Path(__file__).resolve().parents[2]
         gate = scheduler_gate(root, args.retry_gate) if args.retry_gate else None
-        result = execute(root, args.plan, args.project, args.execute, args.credentials, retry_gate=gate, backfill=args.backfill)
+        completion_ids = decode(private_path(root,args.completion_ids).read_bytes()) if args.completion_ids else None
+        result = execute(root, args.plan, args.project, args.execute, args.credentials, retry_gate=gate, backfill=args.backfill, completion_ids=completion_ids)
         print(json.dumps(result))
         return 0 if result['status'] != 'FAILED' else 1
     except Exception as error:

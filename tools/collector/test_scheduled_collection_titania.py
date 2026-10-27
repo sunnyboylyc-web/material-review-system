@@ -8,7 +8,7 @@ from unittest.mock import patch
 spec=importlib.util.spec_from_file_location('_titania_regression',Path(__file__).with_name('test_scheduled_collection.py'))
 existing=importlib.util.module_from_spec(spec)
 with patch.dict(sys.modules,{'scheduled_collection':candidate}):spec.loader.exec_module(existing)
-omit={'test_slot_is_shanghai_yesterday_no_catchup','test_oneoff_slot_retries_failed_but_skips_verified','test_1420_skips_every_verified_project_without_collection','test_1420_has_new_identity_and_deduplicates_until_142459','test_backup_failure_no_import_other_project_attempted','test_database_check_scoped_exact_account_day_three_tables','test_persistent_backup_once_per_day_and_changed_dump_rejected','test_credential_init_failure_replaces_previous_success_without_secret'}
+omit={'test_slot_is_shanghai_yesterday_no_catchup','test_oneoff_slot_retries_failed_but_skips_verified','test_1420_skips_every_verified_project_without_collection','test_1420_has_new_identity_and_deduplicates_until_142459','test_backup_failure_no_import_other_project_attempted','test_database_check_scoped_exact_account_day_three_tables','test_persistent_backup_once_per_day_and_changed_dump_rejected','test_credential_init_failure_replaces_previous_success_without_secret','test_twelve_waits_require_matching_previous_permit_and_yield_each_time','test_failed_receipt_allows_twelve_retries'}
 class TargetTests(unittest.TestCase):
  def test_target_slots_and_no_old_oneoffs(self):
   for hour,minute in [(8,0),(8,30),(9,0),(9,30),(10,0),(10,30),(11,0),(11,30),(12,0)]:
@@ -37,6 +37,34 @@ class TargetTests(unittest.TestCase):
  def test_owned_schema_and_tables(self):
   self.assertEqual(candidate.SCHEMA,'material_dashboard');self.assertEqual(len(candidate.TABLES),3)
   self.assertTrue(all(t.startswith('scsj_') and t==t.lower() for t in candidate.TABLES))
+ def test_eight_permits_are_sequenced_and_rate_limit_does_not_yield_other_projects(self):
+  import tempfile,json
+  from unittest.mock import patch
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp).resolve();ops=object.__new__(candidate.LinuxOps);ops.root=root
+   events=[];ops.yield_project=lambda:events.append('yield')
+   state={'attemptDir':str(root/'.local/attempt'),'plan':'synthetic','projectId':'synthetic'}
+   def command(args,timeout,progress,log):
+    for n in range(1,9):progress('RETRY_WAIT',None,n,n%2==0)
+    with self.assertRaises(candidate.Rejected):progress('RETRY_WAIT',None,9)
+   with patch.object(ops,'command',side_effect=command),patch.object(ops,'recover_collection',return_value='synthetic'):
+    self.assertEqual('synthetic',ops.collect(state,lambda *_:None))
+   self.assertEqual(4,len(events))
+   self.assertEqual(8,json.loads((Path(state['attemptDir'])/'retry-permit.json').read_text())['retryCount'])
+
+ def test_existing_day_still_invokes_pending_completion_in_morning(self):
+  import tempfile
+  with tempfile.TemporaryDirectory() as tmp:
+   ops=existing.FakeOps();ops.present.add('one');calls=[]
+   def pending(state,project,point,backfill=False):
+    calls.append((project['id'],point,backfill));state['pendingCount']=1 if project['id']=='one' else 0
+   ops.pending_materials=pending
+   runner=candidate.Runner(Path(tmp).resolve(),ops)
+   runner.run(dt.datetime.fromisoformat('2026-10-27T08:00:00+08:00'))
+   self.assertTrue(any(p=='one' and backfill for p,_,backfill in calls))
+   self.assertNotIn(('collect','one'),ops.calls)
+   self.assertTrue(any(x.get('pendingCount')==1 for x in runner.public['projects']))
+
 def suite():
  out=unittest.TestSuite()
  for cls in vars(existing).values():

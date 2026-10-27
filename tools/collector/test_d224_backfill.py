@@ -63,7 +63,7 @@ class RoutingTests(unittest.TestCase):
                 response['result']['structuredContent']['code']=51010
         result,_=self.execute(fixture.Fake(broken_b))
         self.assertEqual(result['status'],'FAILED')
-        self.assertEqual(self.sleeps,[60])
+        self.assertEqual(self.sleeps,[60,60])
         self.assertFalse((Path(result['receipt']).parent/'publication').exists())
 
     def test_empty_a_routes_b_keeps_a_evidence(self):
@@ -84,7 +84,7 @@ class RoutingTests(unittest.TestCase):
         self.assertTrue(material['paginationComplete'])
 
     def test_each_error_has_bounded_60_second_budget_and_never_routes_after_error(self):
-        for code,budget in [(51010,1),(40100,2),(40000,2),(400153,2)]:
+        for code,budget in [(51010,2),(40100,2),(40000,2),(400153,2)]:
             with self.subTest(code=code):
                 def failure(response,args):response['result']['structuredContent']['code']=code
                 fake=fixture.Fake(failure)

@@ -105,7 +105,7 @@ class Runner:
         if persist:
             save(self.state_path(state), state)
         exposed = {k: state[k] for k in ('projectId', 'statDate', 'status', 'updatedAt',
-                    'errorCode', 'retryNotBefore', 'rows') if k in state and state[k] is not None}
+                    'errorCode', 'retryNotBefore', 'rows', 'pendingCount') if k in state and state[k] is not None}
         self.public['projects'] = [p for p in self.public['projects'] if (p['projectId'], p['statDate']) != (state['projectId'], state['statDate'])] + [exposed]
         self.publish()
 
@@ -144,6 +144,7 @@ class Runner:
             state = dict(projectId=project['id'], accountId=project.get('storageAccountId', project['advertiserId']), statDate=day,
                          status='PENDING', attempts=[])
             if backfill: state['collectionMode'] = 'GAP_BACKFILL'
+            state['currentSlot'] = point
             path = self.state_path(state)
             try:
                 if path.exists() or path.is_symlink():
@@ -152,6 +153,7 @@ class Runner:
                     require(loaded['projectId'] == project['id'] and loaded['accountId'] == project.get('storageAccountId', project['advertiserId'])
                             and loaded['statDate'] == day and isinstance(loaded['attempts'], list), 'STATE_IDENTITY_CHANGED')
                     state = loaded
+                    state['currentSlot'] = point
                     if backfill and not state.get('receipt'): state['collectionMode'] = 'GAP_BACKFILL'
             except Exception:
                 self.update(state, 'REVIEW_REQUIRED', persist=False, errorCode='STATE_RECORD_INVALID')
@@ -180,11 +182,14 @@ class Runner:
         return self.public
 
     def project(self, state, plan, project, point):
+        state['currentPlan'] = str(plan)
         old = state['status']
         if old == 'REVIEW_REQUIRED' and state.get('errorCode') == 'BACKFILL_THEME_CONFLICT' and self.ops.exists(project, state['statDate']):
             self.update(state, 'ALREADY_PRESENT', errorCode=None)
             return
         if old in ('VERIFIED', 'ALREADY_PRESENT', 'REVIEW_REQUIRED'):
+            if old != 'REVIEW_REQUIRED' and hasattr(self.ops,'pending_materials'):
+                self.ops.pending_materials(state,project,point,backfill='T08' in point)
             self.update(state)
             return
         if old in ('IMPORTING', 'VERIFYING'):
@@ -193,6 +198,8 @@ class Runner:
             self.ops.validate_source(state)
             rows = self.ops.verify(state)
             self.update(state, 'VERIFIED', rows=rows, errorCode=None, retryNotBefore=None)
+            if hasattr(self.ops,'pending_materials'): self.ops.pending_materials(state,project,point)
+            self.update(state)
             return
         if old in ('COLLECTING', 'RETRY_WAIT'):
             # Aborted collector may have published but not saved its result. Recover its private output only.
@@ -219,6 +226,8 @@ class Runner:
         if not state.get('receipt'):
             if self.ops.exists(project, state['statDate']):
                 self.update(state, 'ALREADY_PRESENT', errorCode='EXISTING_FACTS_NOT_OWNED')
+                if hasattr(self.ops,'pending_materials'): self.ops.pending_materials(state,project,point,backfill='T08' in point)
+                self.update(state)
                 return
             state['plan'] = str(plan)
             state['attemptDir'] = str(self.base / 'attempts' / uuid.uuid4().hex)
@@ -239,6 +248,8 @@ class Runner:
         rows = self.ops.verify(state)
         self.ops.validate_source(state)
         self.update(state, 'VERIFIED', rows=rows, errorCode=None, retryNotBefore=None)
+        if hasattr(self.ops,'pending_materials'): self.ops.pending_materials(state,project,point)
+        self.update(state)
 
 
 class LinuxOps:
@@ -281,7 +292,10 @@ class LinuxOps:
                             event = json.loads(line)
                             if event.get('status') == 'RETRY_WAIT':
                                 started = time.monotonic()
-                                progress('RETRY_WAIT', event.get('retryNotBefore'), event.get('retryCount'))
+                                if event.get('globalPause'):
+                                    progress('RETRY_WAIT', event.get('retryNotBefore'), event.get('retryCount'), True)
+                                else:
+                                    progress('RETRY_WAIT', event.get('retryNotBefore'), event.get('retryCount'))
                                 # Time spent on other projects is not this
                                 # parked child's active timeout budget.
                                 deadline += time.monotonic() - started
@@ -356,13 +370,13 @@ class LinuxOps:
         log = Path(state['attemptDir']) / 'collector-output.jsonl'
         permit = log.parent / 'retry-permit.json'
         granted = 0
-        def parked(status, retry=None, retry_count=None):
+        def parked(status, retry=None, retry_count=None, global_pause=False):
             nonlocal granted
             progress(status, retry)
             if status == 'RETRY_WAIT':
-                require(type(retry_count) is int and retry_count == granted + 1 and retry_count <= 12,
+                require(type(retry_count) is int and retry_count == granted + 1 and retry_count <= 8,
                         'RETRY_SEQUENCE_INVALID')
-                self.yield_project()
+                if not global_pause: self.yield_project()
                 if granted:
                     require(read(self.private(permit)) == {'resume': True, 'retryCount': granted},
                             'RETRY_PERMIT_CHANGED')
@@ -370,12 +384,18 @@ class LinuxOps:
                     require(not permit.exists() and not permit.is_symlink(), 'RETRY_PERMIT_ALREADY_EXISTS')
                 save(permit, {'resume': True, 'retryCount': retry_count})
                 granted = retry_count
+        extra = []
+        if state.get('completionIds'):
+            log.parent.mkdir(parents=True,exist_ok=True)
+            ids = log.parent/'completion-ids.json'
+            save(ids,state['completionIds'])
+            extra = ['--completion-ids',str(ids)]
         try:
             remaining = max(1, int(self.collection_deadline - time.monotonic())) if getattr(self, 'collection_deadline', None) else 2400
             self.command([sys.executable, '-B', str(self.root / 'tools/collector/collect.py'),
                 '--plan', state['plan'], '--project', state['projectId'], '--execute',
                 '--credentials', str(self.root / '.local/collector-auth/credentials.json'),
-                '--retry-gate', str(permit)] + (['--backfill'] if state.get('collectionMode') == 'GAP_BACKFILL' else []), min(2400, remaining), parked, log)
+                '--retry-gate', str(permit)] + (['--backfill'] if state.get('collectionMode') == 'GAP_BACKFILL' else []) + extra, min(2400, remaining), parked, log)
         except Rejected as error:
             if str(error) == 'PROCESS_FAILED':
                 raise Rejected(self.collection_failure(state)) from None
@@ -390,7 +410,7 @@ class LinuxOps:
             log = self.private(Path(state['attemptDir']) / 'collector-output.jsonl')
             require(log.stat().st_size <= 1024 * 1024)
             result = json.loads(log.read_text().splitlines()[-1])
-            require(result['status'] == 'FAILED' and result['errorCode'] in ('PROTOCOL_REJECTED', 'BACKFILL_THEME_CONFLICT'))
+            require(result['status'] == 'FAILED' and result['errorCode'] in ('PROTOCOL_REJECTED', 'BACKFILL_THEME_CONFLICT', 'ANCHOR_PROVIDER_REJECTED', 'ROW_REJECTED', 'GROUP_MISMATCH', 'CREATION_TIME_UNRESOLVED_POSITIVE_OR_UNKNOWN', 'ZERO_SPEND_HAS_OTHER_CONTRIBUTIONS', 'CREATION_TIME_HISTORY_CONFLICT'))
             path = self.private(Path(result['receipt']))
             require(path.name == 'receipt.json' and path.parent.parent == self.root / '.local/collector-runs'
                     and re.fullmatch('[0-9a-f]{32}', path.parent.name) and path.stat().st_size <= 1024 * 1024)
@@ -423,15 +443,17 @@ class LinuxOps:
                 require(source.resolve(strict=True) == source and source.is_relative_to(self.root))
                 require(self.collector.evidence(source) == item)
             require(Path(receipt['failureEvidence']['absolutePath']) == path.parent / 'failure-response.http.json')
+            if receipt['errorCode'] in ('ROW_REJECTED','GROUP_MISMATCH','CREATION_TIME_UNRESOLVED_POSITIVE_OR_UNKNOWN','ZERO_SPEND_HAS_OTHER_CONTRIBUTIONS', 'CREATION_TIME_HISTORY_CONFLICT'):
+                return receipt['errorCode']
             d = receipt['diagnostic']
             facts = d['facts']
-            require(d['stage'] == 'tools/call' and d['rule'] == 'BUSINESS_CODE_ZERO'
+            require(d['stage'] in ('tools/call','anchor-resolution') and d['rule'] in ('BUSINESS_CODE_ZERO','ANCHOR_BUSINESS_CODE')
                     and facts['codeType'] == 'integer' and type(facts['numericCode']) is int
-                    and facts['numericCode'] == 51010)
-            require(d['group'] in ('base', 'video', 'assist', 'ratio1', 'ratio2')
+                    and facts['numericCode'] in (51010,40100,40000,400153))
+            require(d['group'] in ('base', 'video', 'assist', 'ratio1', 'ratio2', 'anchor')
                     and type(d['page']) is int and 1 <= d['page'] <= 100000
-                    and type(facts['retryCount']) is int and 0 <= facts['retryCount'] <= 12)
-            return f"PLATFORM_51010_{d['group'].upper()}_PAGE_{d['page']}_RETRIES_{facts['retryCount']}"
+                    and type(facts.get('retryCount',0)) is int and 0 <= facts.get('retryCount',0) <= 8)
+            return f"PLATFORM_{facts['numericCode']}_{d['group'].upper()}_PAGE_{d['page']}_RETRIES_{facts.get('retryCount',0)}"
         except Exception:
             return 'PROCESS_FAILED'
 
@@ -456,6 +478,7 @@ class LinuxOps:
         require(read(self.private(pointer))['revision'] == plan['revision'], 'CONFIGURATION_CHANGED')
         receipt_path = self.private(Path(state['receipt']))
         receipt = read(receipt_path)
+        require(receipt.get('completionMaterialIds') == state.get('completionIds'), 'PENDING_SOURCE_SCOPE_CHANGED')
         require(receipt['status'] == 'COLLECTED_NOT_IMPORTED' and receipt['databaseImported'] is False
                 and receipt['transportEvidence'] == 'HTTP_BYTES' and receipt['sources'] == sources
                 and receipt['configurationRevision'] == plan['revision'], 'SOURCE_RECEIPT_REJECTED')
@@ -474,6 +497,7 @@ class LinuxOps:
         require(receipt['publication'] == expected_publication, 'SOURCE_PUBLICATION_CHANGED')
         items = receipt['publication'] + receipt['rawEvidence'] + receipt['sources']
         items += receipt.get('anchorResolution', {}).get('evidence', [])
+        if receipt.get('creationTimeEvidence'): items.append(receipt['creationTimeEvidence'])
         for item in items:
             path = Path(item['absolutePath'])
             require(path.resolve(strict=True) == path and path.is_relative_to(self.root), 'UNSAFE_SOURCE_PATH')
@@ -482,6 +506,19 @@ class LinuxOps:
         require(material['advertiserId'] == project['advertiserId'] and material['projectRef'] == state['projectId']
                 and material['statDate'] == state['statDate'], 'SOURCE_IDENTITY_CHANGED')
         state['rows'] = len(material['rows'])
+
+    def pending_materials(self, state, project, point, backfill=False):
+        from pending_materials import PendingMaterials, complete, connect
+        registry = PendingMaterials(self.root)
+        if state.get('receipt'):
+            state['pendingCount'] = registry.register(state,project,self.collector.evidence)
+        if backfill:
+            checked=getattr(self,'_pending_reconciled',set())
+            if project['id'] not in checked:
+                registry.reconcile_existing(project,connect);checked.add(project['id']);self._pending_reconciled=checked
+            if getattr(self,'collection_deadline',float('inf'))-time.monotonic()>30:
+                state['pendingCount'] = complete(self,state,project,point)
+        registry.publish()
 
     def prepare(self, state):
         config = Path(state['attemptDir']) / 'import.json'
