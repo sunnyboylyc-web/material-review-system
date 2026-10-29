@@ -1,0 +1,73 @@
+/* Existing night palette; improve the reading hierarchy without removing comparison values. */
+.neural-app .period-review-v2>.material-type-review{display:flow-root;margin-top:36px;padding-top:24px;border-top:1px solid var(--sc-line)}
+.neural-app .period-review-v2>.material-type-review>.material-type-toolbar{margin-top:0}
+.neural-app .material-type-toolbar h3{color:var(--sc-text)}
+.neural-app .material-type-date-grid>.range-picker:nth-child(even){justify-self:end;justify-content:flex-end}
+.neural-app .daily-ranking-title{display:flex;align-items:center;gap:16px}
+.neural-app .daily-ranking-title h4{margin:0}
+.neural-app .ai-breakdown-title-row{display:flex;align-items:center;gap:16px}
+.neural-app .ai-breakdown-title-row h3{margin:0}
+@media(max-width:900px){.neural-app .material-type-date-grid>.range-picker:nth-child(even){justify-self:start;justify-content:flex-start}}
+.neural-app .meeting-section-heading{display:flex;align-items:center;gap:14px;min-width:0;margin:28px 0 18px}
+.neural-app .meeting-section-heading .pr-section-title{margin:0}
+.neural-app .meeting-export-trigger{font-size:12px;padding:6px 10px;min-height:32px;border-color:var(--sc-line);color:var(--sc-gold)}
+.neural-app .pr-section-head>h4{margin-right:auto}
+.neural-app .pr-kpi>span,.neural-app .pr-secondary-kpis article>span{font-size:13px;line-height:1.6}
+.neural-app .pr-kpi-value{font-size:28px;font-weight:700}
+.neural-app .pr-secondary-kpis article>strong{font-size:18px;font-weight:600}
+.neural-app .pr-secondary-kpis article>small,.neural-app .pr-kpi-footer,.neural-app .pr-kpi-footer span,.neural-app .pr-kpi-footer b{font-size:12px;line-height:1.65}
+.neural-app .pr-kpi-footer{flex-wrap:wrap;gap:8px 16px}
+.neural-app .pr-ratio-labels,.neural-app .pr-ratio-row,.neural-app .pr-legend{font-size:12px}
+.neural-app .pr-ratio-track{height:15px}
+.neural-app .pr-composition h4{color:var(--sc-text);font-size:14px;font-weight:600}
+.neural-app .pr-column-values{font-size:12px;font-weight:600;line-height:1.7}
+.neural-app .pr-column-values span{font-size:12px}
+.neural-app .pr-column-item>strong{font-size:14px}
+.neural-app .spend-curve--expanded text{font-size:12px;font-weight:500}
+.neural-app .scatter-wrap svg text{font-size:12px}
+.neural-app .scatter-point text{font-weight:700}
+.neural-app .scatter-titlebar{flex-wrap:wrap;gap:10px}
+.neural-app .scatter-titlebar h4{margin-right:auto}
+.neural-app .selected-material-titlebar{flex-wrap:wrap;gap:12px}
+.neural-app .meeting-content .meeting-section-heading{margin-top:0}
+.neural-app .meeting-content .meeting-section-heading:empty{display:none}
+/* The export-only paper scope never changes the live site's palette. */
+.neural-app .meeting-paper{--sc-bg:#f7f8fa;--sc-panel:#fff;--sc-panel2:#fff;--sc-text:#242c3b;--sc-muted:#566074;--sc-line:#d8dce5;--sc-gold:#85631c;--line:#d8dce5;--ink:#242c3b;--muted:#566074;--surface:#fff;--surface-soft:#f2f4f8;--danger:#a62e32;color-scheme:light;background:#f7f8fa;color:#242c3b}
+.neural-app .meeting-paper *{box-shadow:none!important;text-shadow:none!important;backdrop-filter:none!important;background-image:none!important}
+.neural-app .meeting-paper .meeting-sheet-heading p{color:#566074!important}
+.neural-app .meeting-paper :is(.material-card,.material-card-art){background:#fff!important;border-color:#d8dce5!important;color:#242c3b!important}
+.neural-app .meeting-paper :is(.material-card-title,.material-card-metrics p,.material-card-metrics strong){color:#242c3b!important}
+.neural-app .meeting-paper :is(.material-card-label,.material-card-id,.material-card-date){color:#566074!important}
+.neural-app .meeting-paper .ai-breakdown-note{background:#f0edf6!important;border-color:#d8d0e5!important;color:#58486b!important}
+.neural-app .meeting-paper :is(.pr-kpi,.pr-group,.pr-composition>section,.pr-secondary-kpis,.material-type-table-shell,.chart-card,.period-material-chart){background:#fff!important;border-color:#d8dce5!important;color:#242c3b!important}
+.neural-app .meeting-paper :is(.pr-kpi-value,.pr-secondary-kpis strong,h2,h3,h4,h5,.selected-metrics-grid strong,.pr-column-values,.business-table td,.material-heading strong){color:#242c3b!important}
+.neural-app .meeting-paper :is(.pr-kpi-footer,.pr-kpi-footer span,.pr-kpi>span,.pr-secondary-kpis span,.pr-secondary-kpis small,.pr-ratio-labels,.pr-ratio-row,.pr-legend,.module-note,.business-table small,.selected-material-id,.selected-material-date,.pr-column-item>strong){color:#566074!important}
+.neural-app .meeting-paper :is(.business-table th,.business-table td,.pr-secondary-kpis article,.pr-kpi-footer,.meeting-sheet-heading,footer){border-color:#d8dce5!important}
+.neural-app .meeting-paper .business-table{background:#fff!important;color:#242c3b}
+.neural-app .meeting-paper .business-table thead th{background:#edf0f5!important;color:#485267!important}
+.neural-app .meeting-paper .business-table tbody th{background:#f4f3f8!important;color:#68552e!important}
+.neural-app .meeting-paper :is(.type-detail-button,.ai-summary-button){color:#68552e!important}
+.neural-app .meeting-paper .business-table tbody td{background:#fff!important}
+.neural-app .meeting-paper .ai-summary-row td{background:#f4f0fa!important}
+.neural-app .meeting-paper :is(.comparison-up,.pr-kpi-footer .comparison-up,.pr-secondary-kpis small.comparison-up){color:#257252!important;background:#eef6f1!important}
+.neural-app .meeting-paper :is(.comparison-down,.pr-kpi-footer .comparison-down,.pr-secondary-kpis small.comparison-down){color:#a04845!important;background:#fcf0ee!important}
+.neural-app .meeting-paper .comparison-flat{color:#566074!important}
+.neural-app .meeting-paper :is(.metric-unknown,.metric-undefined,.form-error){color:#8b5b20!important}
+.neural-app .meeting-paper .pr-icon{color:#6a548d!important;background:#eee8f6!important;border-color:#c9bddc!important}
+.neural-app .meeting-paper .historical .pr-icon{color:#3b718b!important;background:#e7f0f5!important}
+.neural-app .meeting-paper .pr-column{background:#9d8bb4!important}
+.neural-app .meeting-paper .pr-column.current{background:#9a7931!important}
+.neural-app .meeting-paper .pr-column.unknown{background:#e6e8ec!important;color:#77551d!important}
+.neural-app .meeting-paper .pr-ratio-track .new{background:#9380b8!important}
+.neural-app .meeting-paper .pr-ratio-track .historical{background:#6390a7!important}
+.neural-app .meeting-paper .pr-ratio-track .aigc{background:#b29352!important}
+.neural-app .meeting-paper .pr-ratio-track .pending{background:#c7cbd4!important}
+.neural-app .meeting-paper :is(.spend-curve,.scatter-wrap){color:#77629d!important}
+.neural-app .meeting-paper svg text{fill:#485267!important}
+.neural-app .meeting-paper .chart-axis{stroke:#aab1bf!important}
+.neural-app .meeting-paper .scatter-point circle{fill:#e9e4f1!important;stroke:#78638e!important}
+.neural-app .meeting-paper .scatter-point.is-selected circle{fill:#e4ce95!important;stroke:#8a6822!important}
+.neural-app .meeting-paper .synthetic-coverage-warning{background:#f1f3f7!important;color:#566074!important}
+.neural-app .meeting-paper :is(.pr-legend span:first-child,.pr-chart-legend span:first-child){color:#77658f!important}
+.neural-app .meeting-paper .pr-legend span:nth-child(2){color:#477e98!important}
+.neural-app .meeting-paper .pr-chart-legend span:nth-child(2){color:#80601e!important}

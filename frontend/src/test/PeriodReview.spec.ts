@@ -24,6 +24,22 @@ async function fixture(): Promise<ReviewResult> {
   return result
 }
 describe('period review v2', () => {
+  it('exports already available TOP rows while the full candidate query is pending without claiming completeness',async()=>{
+    Object.defineProperty(HTMLDialogElement.prototype,'showModal',{configurable:true,value:()=>{}})
+    Object.defineProperty(HTMLDialogElement.prototype,'close',{configurable:true,value:()=>{}})
+    const result=await fixture()
+    const w=mount(PeriodReview,{attachTo:document.body,props:{result,projectName:'合成项目',loadAllOverallMaterials:()=>new Promise(()=>{})}})
+    await w.get('.pr-column-item').trigger('click');await flushPromises()
+    const button=w.get('.pr-dialog .material-detail-export>.meeting-export-trigger')
+    expect(button.attributes('disabled')).toBeUndefined()
+    await button.trigger('click');await flushPromises()
+    expect(w.findAll('.meeting-content tbody tr')).toHaveLength(10)
+    expect(w.get('.meeting-sheet').text()).toContain('完整名录尚未就绪')
+    expect(w.findAll('select[aria-label="导出数量"] option').map(n=>n.text())).toEqual(['10 条'])
+    expect(w.findAll('select[aria-label="每页条数"] option').every(n=>Number(n.attributes('value'))%10===0)).toBe(true)
+    expect(w.find('.meeting-content .spend-curve').exists()).toBe(false);w.unmount()
+  })
+
   it('labels the existing creation date as first delivery time without using first positive spend', async () => {
     const result = await fixture()
     result.topMaterials[0].creationDate = { status: 'VERIFIED', date: '2026-08-15', reason: null }
@@ -65,7 +81,9 @@ describe('period review v2', () => {
     const wrapper=mount(PeriodReview,{props:{result,projectName:'合成项目'}})
     expect(wrapper.findAll('.period-material-chart')).toHaveLength(1)
     expect(wrapper.findAll('.pr-column-item')).toHaveLength(10)
-    expect(wrapper.get('.pr-column-item').text()).toContain('虚构素材0')
+    expect(wrapper.get('.pr-column-item>strong').text()).toContain('1. 虚构素材0')
+    expect(wrapper.get('.pr-column-item').attributes('aria-label')).toContain('虚构素材0')
+    expect(wrapper.find('.pr-chart-key-table').exists()).toBe(false)
     expect(wrapper.findAll('.pr-group')).toHaveLength(2)
     await wrapper.get('.pr-column-item').trigger('click');await flushPromises()
     expect(wrapper.get('#pr-dialog-title').text()).toContain('整体素材')

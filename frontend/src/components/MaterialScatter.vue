@@ -20,6 +20,7 @@ const selectedRow = computed(() => props.rows.find(row => row.materialId === pro
   <div class="scatter-wrap">
     <div class="scatter-titlebar">
     <h4>消耗 &amp; ROI</h4>
+    <slot name="export"/>
     <label class="scatter-locator">榜单素材
       <select :value="selectedRow?.materialId ?? ''" @change="emit('select', ($event.target as HTMLSelectElement).value)">
         <option disabled value="">点重叠时，可按排名选择</option>

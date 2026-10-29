@@ -4,6 +4,8 @@ import type { AiMaterialKey, MaterialTypeKey, MaterialTypeQuery, MaterialTypeRev
 import { formatCreationDate, formatMaterialLabel } from '../domain/formatting'
 import { comparisonClass } from '../domain/comparison'
 import MetricValue from './MetricValue.vue'
+import MeetingExport from './MeetingExport.vue'
+import MaterialDetailExport from './MaterialDetailExport.vue'
 import SpendCurve from './SpendCurve.vue'
 import DateRangePicker from './DateRangePicker.vue'
 import UiIcon from './UiIcon.vue'
@@ -14,7 +16,7 @@ import MaterialTestPeriodHelp from './MaterialTestPeriodHelp.vue'
 import { useMaterialDetailFilters } from '../composables/useMaterialDetailFilters'
 import type { FilterColumn } from '../domain/materialFilters'
 
-const props = defineProps<{ result: MaterialTypeReview; projectName: string; saved?: MaterialTypeSelection; load?: (query: MaterialTypeQuery) => Promise<MaterialTypeReview> }>()
+const props = defineProps<{ result: MaterialTypeReview; projectName: string; synthetic?: boolean; saved?: MaterialTypeSelection; load?: (query: MaterialTypeQuery) => Promise<MaterialTypeReview> }>()
 const emit = defineEmits<{ updated: [selection: MaterialTypeSelection] }>()
 const displayed = ref(props.saved?.result ?? props.result)
 function initialQuery(): MaterialTypeQuery {
@@ -55,6 +57,7 @@ async function refresh() {
   } catch (failure) { if (request === queryRequest) error.value = failure instanceof Error ? failure.message : '素材类型查询失败，已保留上次结果。' }
   finally { if (request === queryRequest) loading.value = false }
 }
+const meetingContext=computed(()=>props.projectName+' · '+displayed.value.periods.map(p=>(p.key==='CURRENT'?'本周期':'上周期')+' '+p.range.start+' — '+p.range.end+' · 素材测试周期 '+(p.testRange??p.range).start+' — '+(p.testRange??p.range).end).join(' · '))
 const types = ['original', 'mixed', 'other'] as const
 const names = { original: '原创', mixed: '混剪', other: '其他', business: '含 AI · 商单', department: '含 AI · 部门' }
 type DetailKey = keyof typeof names
@@ -76,6 +79,7 @@ const current = computed(() => period('CURRENT'))
 const partial = computed(() => displayed.value.periods.some(p => p.coverage.state !== 'COMPLETE' || p.unresolvedDateMaterials > 0
   || p.groups.some(g => columns.some(c => g.metrics[c.key].partial || g.metrics[c.key].status === 'UNKNOWN_INPUT'))))
 const selected = ref<DetailKey | null>(null)
+function aiExportTarget(){return aiDialog.value?.querySelector<HTMLElement>('[data-ai-export-content]')??null}
 const aiOpened = ref(false)
 const aiDialog = ref<HTMLDialogElement>()
 const aiCloseButton = ref<HTMLButtonElement>()
@@ -133,7 +137,8 @@ onBeforeUnmount(() => { queryRequest++; dialog.value?.close?.(); aiDialog.value?
     <p class="module-note material-type-scope">统计日期按本周期／上周期筛选，首次投放日期按对应素材测试周期筛选；只更新 05、06。</p>
     <p v-if="pending" class="form-error" role="status">条件已修改，请刷新数据；05、06 仍显示上次结果。</p>
     <p v-if="error" class="form-error" role="alert">{{ error }}</p>
-    <h4 id="material-type-title" class="pr-section-title"><small>05</small>素材类型</h4>
+    <section data-meeting-section>
+    <div class="meeting-section-heading"><h4 id="material-type-title" class="pr-section-title"><small>05</small>素材类型</h4><MeetingExport title="素材类型" :context="meetingContext" :synthetic="!!synthetic"/></div>
     <p v-if="partial" class="module-note material-type-attention" role="status">部分数据缺失或待核，以下为已有数据结果。</p>
     <div class="table-shell material-type-table-shell">
       <table class="business-table material-type-table" aria-label="本期素材类型七项指标">
@@ -143,27 +148,31 @@ onBeforeUnmount(() => { queryRequest++; dialog.value?.close?.(); aiDialog.value?
     </div>
     <p v-if="displayed.ai" class="module-note ai-overlay-note">含 AI 为独立叠加统计，可与原创／混剪／其他重叠；不区分大小写，AIR 片段不计入。点击含 AI 查看商单与部门。</p>
     <p v-else class="module-note">这份旧结果尚无含 AI 统计，刷新素材类型数据后可查看。</p>
-    <h4 class="pr-section-title"><small>06</small>原创与混剪表现</h4>
+    </section>
+    <section data-meeting-section>
+    <div class="meeting-section-heading"><h4 class="pr-section-title"><small>06</small>原创与混剪表现</h4><MeetingExport title="原创与混剪表现" :context="meetingContext" :synthetic="!!synthetic"/></div>
     <div class="pr-performance material-type-performance">
-      <article v-for="type in (['original','mixed'] as const)" :key="type" :class="['pr-group',type === 'original' ? 'new' : 'historical']">
-        <div class="pr-section-head"><h4><span class="pr-icon">{{ type === 'original' ? '原' : '混' }}</span>{{ names[type] }}素材</h4><button class="pr-detail-button" type="button" @click="open(type)">查看{{ names[type] }}素材 ↗</button></div>
+      <article v-for="type in (['original','mixed'] as const)" :key="type" :class="['pr-group',type === 'original' ? 'new' : 'historical']" data-meeting-section>
+        <div class="pr-section-head"><h4><span class="pr-icon">{{ type === 'original' ? '原' : '混' }}</span>{{ names[type] }}素材</h4><MeetingExport :title="names[type]+'素材表现'" :context="meetingContext" :synthetic="!!synthetic"/><button class="pr-detail-button" type="button" @click="open(type)">查看{{ names[type] }}素材 ↗</button></div>
         <div class="pr-group-layout">
           <div class="pr-group-metrics"><article v-for="item in primary" :key="item.key" class="pr-kpi"><span>{{ item.label }}</span><strong class="pr-kpi-value"><MetricValue :result="metric('CURRENT',type,item.key)" :format="item.format"/><small v-if="item.key !== 'roi'">{{ item.key === 'spend' ? '元' : '个' }}</small></strong><div class="pr-kpi-footer"><span>上期 <MetricValue :result="metric('PREVIOUS',type,item.key)" :format="item.format" /></span><b :class="comparisonClass(compare(type,item.key))">对比上期 <MetricValue :result="compare(type,item.key)" format="percent" /></b></div></article></div>
           <div class="pr-secondary-kpis"><article v-for="item in secondary" :key="item.key"><span>{{ item.label }}</span><strong><MetricValue :result="metric('CURRENT',type,item.key)" :format="item.format" /></strong><small>上期 <MetricValue :result="metric('PREVIOUS',type,item.key)" :format="item.format" /></small><small :class="comparisonClass(compare(type,item.key))">对比上期 <MetricValue :result="compare(type,item.key)" format="percent" /></small></article></div>
         </div>
       </article>
     </div>
+    </section>
     <dialog v-if="aiOpened && displayed.ai" ref="aiDialog" class="pr-dialog ai-breakdown-dialog" aria-labelledby="ai-breakdown-title" @cancel.prevent="closeAi" @click="event => { if (event.target === aiDialog) closeAi() }">
-      <header class="pr-dialog-head"><div><h3 id="ai-breakdown-title">含 AI · 商单与部门</h3><p>{{ projectName }} · 本周期 {{ current.range.start }} — {{ current.range.end }}</p><p>素材测试周期 {{ (current.testRange ?? current.range).start }} — {{ (current.testRange ?? current.range).end }}</p></div><button ref="aiCloseButton" type="button" aria-label="关闭含AI细分" @click="closeAi">×</button></header>
-      <div class="pr-dialog-body"><p class="ai-breakdown-note">先筛选含 AI 素材，再分别识别名称中的“商单”“部门”。两个词都有时两块均计入；都没有时仅计入含 AI 总体。两块不可相加作为总计。</p>
-        <div class="pr-performance"><article v-for="type in aiKeys" :key="type" class="pr-group ai-breakdown-card"><div class="pr-section-head"><h4>{{ aiNames[type] }}</h4><button type="button" class="pr-detail-button" :disabled="!displayed.ai.materials" @click="open(type)">查看{{ aiNames[type] }}素材 ↗</button></div>
+      <header class="pr-dialog-head"><div><div class="ai-breakdown-title-row"><h3 id="ai-breakdown-title">含 AI · 商单与部门</h3><MeetingExport title="含 AI · 商单与部门" :context="meetingContext" :synthetic="!!synthetic" :capture-target="aiExportTarget"/></div><p>{{ projectName }} · 本周期 {{ current.range.start }} — {{ current.range.end }}</p><p>素材测试周期 {{ (current.testRange ?? current.range).start }} — {{ (current.testRange ?? current.range).end }}</p></div><button ref="aiCloseButton" type="button" aria-label="关闭含AI细分" @click="closeAi">×</button></header>
+      <div class="pr-dialog-body"><div data-ai-export-content><p class="ai-breakdown-note">先筛选含 AI 素材，再分别识别名称中的“商单”“部门”。两个词都有时两块均计入；都没有时仅计入含 AI 总体。两块不可相加作为总计。</p>
+        <div class="pr-performance"><article v-for="type in aiKeys" :key="type" class="pr-group ai-breakdown-card" data-meeting-section><div class="pr-section-head"><h4>{{ aiNames[type] }}</h4><MeetingExport :title="aiNames[type]" :context="meetingContext" :synthetic="!!synthetic"/><button type="button" class="pr-detail-button" :disabled="!displayed.ai.materials" @click="open(type)">查看{{ aiNames[type] }}素材 ↗</button></div>
           <div class="pr-group-metrics"><article v-for="item in primary" :key="item.key" class="pr-kpi"><span>{{ item.label }}</span><strong class="pr-kpi-value"><MetricValue :result="aiMetric('CURRENT',type,item.key)" :format="item.format"/></strong><div class="pr-kpi-footer"><span>上期 <MetricValue :result="aiMetric('PREVIOUS',type,item.key)" :format="item.format"/></span><b :class="comparisonClass(aiCompare(type,item.key))">对比上期 <MetricValue :result="aiCompare(type,item.key)" format="percent"/></b></div></article></div>
           <div class="pr-secondary-kpis"><article v-for="item in secondary" :key="item.key"><span>{{ item.label }}</span><strong><MetricValue :result="aiMetric('CURRENT',type,item.key)" :format="item.format"/></strong><small>上期 <MetricValue :result="aiMetric('PREVIOUS',type,item.key)" :format="item.format"/></small><small :class="comparisonClass(aiCompare(type,item.key))">对比上期 <MetricValue :result="aiCompare(type,item.key)" format="percent"/></small></article></div>
         </article></div><p v-if="!displayed.ai.materials" class="module-note" role="status">这份旧结果尚无商单／部门素材明细，请刷新素材类型数据后查看。</p>
-      </div>
+      </div></div>
     </dialog>
     <dialog v-if="selected" ref="dialog" class="pr-dialog material-type-dialog" aria-labelledby="material-type-dialog-title" @cancel.prevent="close" @click="event => { if (event.target === dialog) close() }">
       <header class="pr-dialog-head"><div><h3 id="material-type-dialog-title">{{ names[selected] }}素材 · 明细</h3><p>{{ projectName }} · 本期 {{ current.range.start }} — {{ current.range.end }}</p><p>首次投放时间 {{ (current.testRange ?? current.range).start }} — {{ (current.testRange ?? current.range).end }}</p></div>
+        <MaterialDetailExport :title="names[selected]+'素材 · 明细'" :context="meetingContext" :rows="detailFilter.matched.value" :synthetic="!!synthetic" type-metrics/>
         <div class="pr-detail-limit" role="group" aria-label="类型明细显示数量"><span>显示数量</span><button type="button" aria-label="减少类型明细显示数量" :disabled="limits[selected] <= 1" @click="setLimit(limits[selected]-1)">−</button><select aria-label="类型明细显示数量" :value="limits[selected]" @change="setLimit(Number(($event.target as HTMLSelectElement).value))"><option v-for="limit in options" :key="limit" :value="limit">{{ limit }} 条</option></select><button type="button" aria-label="增加类型明细显示数量" :disabled="limits[selected] >= 200" @click="setLimit(limits[selected]+1)">+</button></div>
         <button ref="closeButton" type="button" aria-label="关闭类型素材明细" @click="close">×</button>
       </header>

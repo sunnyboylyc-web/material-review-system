@@ -3,6 +3,7 @@
 @import './project-workspace.css';
 
 @import "./natural-moons.css";
+@import "./meeting-readability.css";
 
 /* Explicit attention wins over R05's neutral explanatory-copy selectors. */
 .neural-app.app-shell :is(.history-upload, .collected-export, .configuration-panel, .file-storage) :is(.upload-important, .export-attention, .configuration-attention, .file-storage__attention, [role="alert"]),

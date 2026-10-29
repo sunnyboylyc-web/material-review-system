@@ -1012,14 +1012,19 @@
       "sha256": "0c91a3eabdf21b3974e59769cd1784e277cbbca08fa7522e6ccd2d44c6a71b2b"
     },
     {
+      "path": "frontend/meeting-design-preview.html",
+      "bytes": 327,
+      "sha256": "4435bcb23e28c2e235a167ef53dbaa18348cd716f1795e493fbc608d73544650"
+    },
+    {
       "path": "frontend/package.json",
-      "bytes": 602,
-      "sha256": "c88a5908b523d1963fb60e4495e26c08a4332931f19155250965adc706a3da0d"
+      "bytes": 634,
+      "sha256": "77260860a35c2f4cc16683a0f91b230d5300b5714af04230c41eaea494c9e2a1"
     },
     {
       "path": "frontend/pnpm-lock.yaml",
-      "bytes": 57167,
-      "sha256": "e55f5c7c40c742a8305c4e03c45c0fdab4b6713ddeff8d393b479c93b575e9be"
+      "bytes": 57420,
+      "sha256": "46f72a9ab176bcca9543b749be4371b506b14078ab018a8bf22e07108b905c2e"
     },
     {
       "path": "frontend/pnpm-workspace.yaml",
@@ -1027,14 +1032,29 @@
       "sha256": "ac02d96368617c760f093cfe61fdec64b6244007ab3553e0d6621f706f54a353"
     },
     {
+      "path": "frontend/preview-policy.ts",
+      "bytes": 667,
+      "sha256": "a61d4c04da5e01c7c8291bfd60e856193ba6b46b6d0d84ac018c06066fd44ea5"
+    },
+    {
       "path": "frontend/preview.html",
       "bytes": 501,
       "sha256": "3885dc7e63ec7cfa81a8284d270e859bf26fa81940cfc71b8780d35edc6bdce1"
     },
     {
+      "path": "frontend/public/licenses/html-to-image-LICENSE.txt",
+      "bytes": 1066,
+      "sha256": "9fe73723f7a9e91057f73aafc9b6a3c3b2174db2b3ddc0a3a6a8ddf2bad68e37"
+    },
+    {
+      "path": "frontend/readonly-live-preview.html",
+      "bytes": 326,
+      "sha256": "630089142f1a468c5247792fb13161ab8b2323a39e396af54507ef4ee3e7228a"
+    },
+    {
       "path": "frontend/src/App.vue",
-      "bytes": 66541,
-      "sha256": "499d13326d075e808603c287f6c0d1fbcdf14c3a1acd65101b36f67f1a1f44fc"
+      "bytes": 67424,
+      "sha256": "88fe6a71841633591c16ab754e7fc9e30c0ae9c4e848e8a780d0a3ab7a0490f8"
     },
     {
       "path": "frontend/src/adapters/adminAccounts.ts",
@@ -1192,6 +1212,11 @@
       "sha256": "79e5b80b5bb993d5e1c5e4dec3b674d0dfb76a26ec23167505806cba74497d56"
     },
     {
+      "path": "frontend/src/components/MaterialDetailExport.vue",
+      "bytes": 2960,
+      "sha256": "5cbc8192e419bd476a7cc7f69eaee1e914d52827f59897fd42f700527c04f0b6"
+    },
+    {
       "path": "frontend/src/components/MaterialDrawer.vue",
       "bytes": 3290,
       "sha256": "6e1051e361defc5db70402c5a4438e85b6dc9f8ecefcd52048cad4e981aa265f"
@@ -1208,8 +1233,8 @@
     },
     {
       "path": "frontend/src/components/MaterialScatter.vue",
-      "bytes": 3589,
-      "sha256": "102a3439634cf3e5ed95d2509a45438ac2a95b928f779c73ab33dff9f61a8b0d"
+      "bytes": 3615,
+      "sha256": "5ba527e145742cbf08c7cdba288d761beee4b8fe9ca76da2525122009ba575ea"
     },
     {
       "path": "frontend/src/components/MaterialTestPeriodHelp.vue",
@@ -1218,8 +1243,13 @@
     },
     {
       "path": "frontend/src/components/MaterialTypeReview.vue",
-      "bytes": 23676,
-      "sha256": "a8b3fe71f18a318f5d735d735f84eb1e96040ab8320cf3b70e80f6a30f16fa33"
+      "bytes": 25186,
+      "sha256": "be72793cd50632364f6b3d92fe6f5c79db1f6782be7ed7a27fad309557c2026b"
+    },
+    {
+      "path": "frontend/src/components/MeetingExport.vue",
+      "bytes": 10731,
+      "sha256": "594d7f57a6afebc52db98096cdcf352658fb1d96f7e28f4443fbbce8bc775c89"
     },
     {
       "path": "frontend/src/components/MetricValue.vue",
@@ -1243,8 +1273,8 @@
     },
     {
       "path": "frontend/src/components/PeriodReview.vue",
-      "bytes": 20053,
-      "sha256": "24303f5f99f0b8e2a165791919bd8f21d8f333b15746fe3c6ad32a06fc339801"
+      "bytes": 21612,
+      "sha256": "9b0eac2d9c3db845af2cad1c68593cdbed9e7f89752c6d7a08f874f3eb629fc8"
     },
     {
       "path": "frontend/src/components/ReturnToTop.vue",
@@ -1288,8 +1318,8 @@
     },
     {
       "path": "frontend/src/dashboard-theme.css",
-      "bytes": 741,
-      "sha256": "92a3e497481970a9f653bf3200c9051eb8c46ee1f6cebdd83d5f5bc97796b664"
+      "bytes": 778,
+      "sha256": "75bc26a48fd4f9336f594541873e9c24df96d5dc46090840f0646b8286cfa180"
     },
     {
       "path": "frontend/src/domain/applicationPath.ts",
@@ -1367,6 +1397,11 @@
       "sha256": "c4cda41a65b1c16022ff6c18c1c4d765d744c0ec9f8b3d544f712734b7c8e21f"
     },
     {
+      "path": "frontend/src/meeting-readability.css",
+      "bytes": 7293,
+      "sha256": "91c6c3572907c341b32b54a924dd7ee0ff716dfb3e1f5b99e86b96371484493f"
+    },
+    {
       "path": "frontend/src/natural-moons.css",
       "bytes": 13088,
       "sha256": "16f3a2f35e4e90fd09f30cfa886aabd59b72252e598c4acebb8bd821390e519a"
@@ -1395,6 +1430,16 @@
       "path": "frontend/src/preview/MaterialTypesPreview.vue",
       "bytes": 4021,
       "sha256": "6c20adcf2982024b8cd1778ff33171031a23bea01e43b17cdcbdc1f0465b77c4"
+    },
+    {
+      "path": "frontend/src/preview/MeetingDesignPreview.vue",
+      "bytes": 7679,
+      "sha256": "fa443722c73eb7faa68cbcb07e915ff12ac0052a6dea58a760fc19db68582cb0"
+    },
+    {
+      "path": "frontend/src/preview/ReadOnlyLivePreview.vue",
+      "bytes": 1285,
+      "sha256": "a438d57322bc3d4bcf26d0d8aa8f1abef6377766dee9b43cbbce221a2110bd72"
     },
     {
       "path": "frontend/src/preview/collection-theme.ts",
@@ -1427,9 +1472,19 @@
       "sha256": "53a2edc5e63600debc4512435a141ceb53395978b742e5084a5b06d71c45d377"
     },
     {
+      "path": "frontend/src/preview/meeting-design.ts",
+      "bytes": 195,
+      "sha256": "383794f1142f88f0eed77ee8a646dce6c59428a09986a7df1f88b70c3f3ea907"
+    },
+    {
       "path": "frontend/src/preview/preview.css",
       "bytes": 378,
       "sha256": "fafa029ede3f94950960363dae4b8e8b1c74e838707b1784602c98459823aa63"
+    },
+    {
+      "path": "frontend/src/preview/readonly-live.ts",
+      "bytes": 192,
+      "sha256": "ab1fcff7cb498fa734df24e6da3ea3112a77f9bda182e533627053af75ba36d8"
     },
     {
       "path": "frontend/src/project-workspace.css",
@@ -1577,6 +1632,11 @@
       "sha256": "a6fc603a63a8a6b4edc314236e23f7fb57e4f6644d5e754a56a0c6c5c2ccde89"
     },
     {
+      "path": "frontend/src/test/MaterialDetailExport.spec.ts",
+      "bytes": 2249,
+      "sha256": "ca564c71ff6d24396f8df615d238c79a3eb6be6481df42e68e914077245d0a89"
+    },
+    {
       "path": "frontend/src/test/MaterialDrawerPresentation.spec.ts",
       "bytes": 1234,
       "sha256": "b023845bc1d1e39f3a349e8df7facdf081d99a169b317c66346d7ef2c81f8597"
@@ -1607,6 +1667,11 @@
       "sha256": "6c6294019a5f873d781296192b25be113e1435c17d6f84a8ed9d83c40b2ea32e"
     },
     {
+      "path": "frontend/src/test/MeetingExport.spec.ts",
+      "bytes": 4564,
+      "sha256": "eed4d5d838c3dc7b09723d3aa4dee178e35a5306ee50e19040031c96e69323a4"
+    },
+    {
       "path": "frontend/src/test/MetricValue.spec.ts",
       "bytes": 1092,
       "sha256": "453e04c7c4fb172fd7ff03b19a2d3b971fbb461e5be9468eeb94602136fc8463"
@@ -1628,8 +1693,8 @@
     },
     {
       "path": "frontend/src/test/PeriodReview.spec.ts",
-      "bytes": 10372,
-      "sha256": "83e7cb559afa9848f403ebec589378af6226a389a12b2a621fe81a14c5ed06b4"
+      "bytes": 11787,
+      "sha256": "195bc6a67315c84a96ce4ee27e568ba1111d24260ccc5de7de7bb2303f12b056"
     },
     {
       "path": "frontend/src/test/PeriodSnapshots.spec.ts",
@@ -1650,6 +1715,11 @@
       "path": "frontend/src/test/ProjectCapacity.spec.ts",
       "bytes": 1629,
       "sha256": "a08c0013ab020b374905b5a3256559fd48a9fa09d642c45a94bc3df240f7a287"
+    },
+    {
+      "path": "frontend/src/test/ReadOnlyPreviewPolicy.spec.ts",
+      "bytes": 1497,
+      "sha256": "7b491b883cd2360459450c384fd919d7436a748aca448d762f17fe6718d74d9f"
     },
     {
       "path": "frontend/src/test/RecoveryMode.spec.ts",
@@ -1933,13 +2003,18 @@
     },
     {
       "path": "frontend/tsconfig.node.json",
-      "bytes": 436,
-      "sha256": "5699d3fc344bb467c4fa76ef609f278a3ba4f79fc67b3a3bb57ae1e8f9744dc2"
+      "bytes": 492,
+      "sha256": "df10f7bc3bd232a27564ca3a6540d194179d2395dacdbf4765c5ac474149026e"
     },
     {
       "path": "frontend/vite.config.ts",
       "bytes": 424,
       "sha256": "097ab1005c62431dded2adaccc7f1f8e9add0a1126fb2da3e8de8eadf8e9a9e9"
+    },
+    {
+      "path": "frontend/vite.readonly-preview.config.ts",
+      "bytes": 1376,
+      "sha256": "6fd358026cabff39d8f4f05e78ac586dd14653836055a107636bf44c5b79315f"
     },
     {
       "path": "tools/collector/collect.py",

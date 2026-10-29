@@ -25,6 +25,7 @@ import SpendCurve from './components/SpendCurve.vue'
 import MaterialScatter from './components/MaterialScatter.vue'
 import { reviewSignal } from './domain/reviewSignal'
 import PeriodReview from './components/PeriodReview.vue'
+import MeetingExport from './components/MeetingExport.vue'
 import DateRangePicker from './components/DateRangePicker.vue'
 import type { ConfigurationAdapter } from './domain/configuration'
 import type { OperationsDataAdapter } from './adapters/operationsAdapter'
@@ -47,6 +48,7 @@ const props = defineProps<{
   historyUploadAdapter?: HistoryUploadAdapter
   historyReadOnly?: boolean
   localReadOnlyPreview?: boolean
+  previewDataDescription?: string
   collectedExportAdapter?: CollectedExportAdapter
   periodPreferences?: PeriodPreferences
   periodSnapshots?: PeriodSnapshots
@@ -743,7 +745,7 @@ onBeforeUnmount(() => {
       <section v-if="props.localReadOnlyPreview" class="local-preview-notice" role="status" :aria-label="isSynthetic ? '本地合成数据只读说明' : '本地真实数据只读说明'" :data-evidence-kind="isSynthetic ? 'SYNTHETIC' : 'CURRENT_FACTS'">
         <strong>{{ isSynthetic ? '本地合成数据 · 隔离只读预览' : '本地真实数据 · 只读预览' }}</strong>
         <p v-if="isSynthetic">当前仅使用虚构样本验证界面，不读取本机业务数据或云端数据。上传、配置保存、删除和真实下载已关闭；展示结果不是业务结果。</p>
-        <p v-else>当前读取本机已有数据，不是云端实时副本。可切换项目、日期并刷新查看；上传、配置保存、删除和文件生成已关闭。日期与结果仅在本次打开期间保留。</p>
+        <p v-else>{{props.previewDataDescription??'当前读取本机已有数据，不是云端实时副本。可切换项目、日期并刷新查看；上传、配置保存、删除和文件生成已关闭。日期与结果仅在本次打开期间保留。'}}</p>
       </section>
       <section v-if="recoveryReadOnly" class="panel recovery-notice" role="status" aria-label="恢复验证说明">
         <strong>管理员只读恢复版 · 尚未恢复正式运行</strong>
@@ -876,12 +878,12 @@ onBeforeUnmount(() => {
               覆盖灯和缺失日期为纯虚构交互演示，不对应这些日期的真实采集或验收状态。
             </p>
             <div class="top-overview">
-              <section class="chart-card scatter-card">
-                <MaterialScatter v-if="['READY','PARTIAL'].includes(topResult.rankingState)" :rows="topResult.rows" :selected-date="topResult.selectedDate" :selected-id="selectedMaterialId" @select="selectMaterial" />
+              <section class="chart-card scatter-card" data-meeting-section>
+                <MaterialScatter v-if="['READY','PARTIAL'].includes(topResult.rankingState)" :rows="topResult.rows" :selected-date="topResult.selectedDate" :selected-id="selectedMaterialId" @select="selectMaterial" ><template #export><MeetingExport title="消耗与 ROI" :context="(selectedProject?.name??'')+' · 统计日 '+topResult.selectedDate" :synthetic="topResult.evidenceKind === 'SYNTHETIC'"/></template></MaterialScatter>
                 <template v-else><h4>消耗 &amp; ROI</h4><p class="form-error scatter-unavailable">{{ topEmptyMessage }} 散点图暂不可用，不将缺失数据绘为零。</p></template>
               </section>
-              <section class="chart-card selected-material-panel" aria-label="选中素材详情" aria-live="polite">
-                <div class="selected-material-titlebar"><h4>素材详情</h4><span v-if="selectedMaterial" class="selected-material-id">{{ formatMaterialLabel(selectedMaterial.materialId, selectedMaterial.materialName) }}</span><span v-if="selectedMaterial" class="selected-material-date">首次投放时间 <strong>{{ formatCreationDate(selectedMaterial.creationDate) }}</strong></span></div>
+              <section class="chart-card selected-material-panel" aria-label="选中素材详情" aria-live="polite" data-meeting-section>
+                <div class="selected-material-titlebar"><h4>素材详情</h4><MeetingExport title="素材详情" :context="(selectedProject?.name??'')+' · 统计日 '+topResult.selectedDate" :synthetic="topResult.evidenceKind === 'SYNTHETIC'"/><span v-if="selectedMaterial" class="selected-material-id">{{ formatMaterialLabel(selectedMaterial.materialId, selectedMaterial.materialName) }}</span><span v-if="selectedMaterial" class="selected-material-date">首次投放时间 <strong>{{ formatCreationDate(selectedMaterial.creationDate) }}</strong></span></div>
                 <template v-if="selectedMaterial">
                   <h5 class="selected-material-name">{{ selectedMaterial.materialName ?? '名称未知' }}</h5>
                   <div class="selected-metrics-grid">
@@ -905,9 +907,10 @@ onBeforeUnmount(() => {
                 <p v-else class="module-note selected-material-empty">{{ topEmptyMessage }}</p>
               </section>
             </div>
+            <section data-meeting-section>
             <div class="module-header top-table-header">
               <div>
-                <p class="overline">MATERIAL COLLECTION</p><h4>素材榜单与趋势</h4>
+                <p class="overline">MATERIAL COLLECTION</p><div class="daily-ranking-title"><h4>素材榜单与趋势</h4><MeetingExport title="素材榜单与趋势" :context="(selectedProject?.name??'')+' · 统计日 '+topResult.selectedDate+' · 当前榜单筛选结果'" :synthetic="topResult.evidenceKind === 'SYNTHETIC'" material-detail/></div>
               </div>
             </div>
             <div class="material-toolbar"><label class="material-search"><UiIcon name="search" :size="16"/><input v-model="materialSearch" placeholder="搜索当前榜单的素材名称或 ID" aria-label="搜索当前素材榜单"/><button v-if="materialSearch" @click="materialSearch = ''" aria-label="清空素材搜索"><UiIcon name="close" :size="14"/></button></label><div class="view-switch"><button :class="{active:materialView==='table'}" @click="materialView='table'"><UiIcon name="table" :size="15"/>数据视图</button><button :class="{active:materialView==='cards'}" @click="materialView='cards'"><UiIcon name="grid" :size="15"/>素材卡片</button></div><small>{{ filteredTopRows.length }} 条素材 · 按原榜单排名</small></div>
@@ -936,6 +939,7 @@ onBeforeUnmount(() => {
                 </tbody>
               </table>
             </div>
+            </section>
             <p class="module-note">
               点击右侧箭头展开或收起消耗曲线。
             </p>
