@@ -16,7 +16,12 @@ from urllib.request import build_opener, HTTPRedirectHandler, ProxyHandler, Requ
 import uuid
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from typing import Literal
+from typing import Literal, Annotated
+
+# JSON Schema can validate shape; real dates and cross-field ordering remain server-validated.
+CalendarDate=Annotated[str,Field(pattern=r'^\d{4}-\d{2}-\d{2}$',json_schema_extra={'format':'date'},description='YYYY-MM-DD真实自然日，年份1900—2200，北京时间Asia/Shanghai，起止当日均包含。')]
+ProjectId=Annotated[str,Field(pattern=r'^[A-Za-z0-9_-]{1,100}$',description='先调用list_projects，从projects[].id原样取得；不是广告账户ID、抖音号或项目显示名称。')]
+ReportId=Annotated[str,Field(pattern=r'^[a-f0-9]{32}$',description='get_period_review或get_daily_top返回的reportId；同一报告后续查询使用同值，最长900秒，可能提前淘汰，失效重新获取报告并从首页开始。')]
 
 GROUPS=('overall','new','historical','aigc','original','mixed','other','business','department')
 BASE_FIELDS={'currentSpend','previousSpend','roi','ctr','cvr','cpm','creationDate','spendShare'}
@@ -37,12 +42,12 @@ class QueryError(ValueError):
 
 class ColumnFilter(BaseModel):
     model_config=ConfigDict(extra='forbid')
-    field: MetricField
-    operator: Literal['eq','ne','gt','gte','lt','lte','between','in','status']
-    value: float|str|None=None
-    to: float|str|None=None
-    values: list[float|str]=Field(default_factory=list,max_length=30)
-    statuses: list[str]=Field(default_factory=list,max_length=10)
+    field: MetricField=Field(description='筛选字段；各组可用字段见get_data_guide.filterFields。百分比字段筛选输入3代表3%，金额元，ROI倍数，creationDate为YYYY-MM-DD。')
+    operator: Literal['eq','ne','gt','gte','lt','lte','between','in','status']=Field(description='eq/ne/gt/gte/lt/lte需value；between需value和to且value≤to；in需非空values；status需非空statuses。多个列筛选为AND。')
+    value: float|str|None=Field(default=None,description='比较值，或between下界；按field采用数字或日期，不允许布尔值或非有限数字。')
+    to: float|str|None=Field(default=None,description='仅between使用的闭区间上界。')
+    values: list[float|str]=Field(default_factory=list,max_length=30,json_schema_extra={'default':[]},description='默认空数组；in匹配列表，使用in时至少1项、最多30项。')
+    statuses: list[str]=Field(default_factory=list,max_length=10,json_schema_extra={'default':[]},description='默认空数组；status状态列表，使用status时非空，最多10项；允许VALID/UNKNOWN_INPUT/ZERO_DENOMINATOR/INVALID_INPUT/VERIFIED/INCOMPLETE/NOT_APPLICABLE/UNKNOWN。')
 
     @model_validator(mode='before')
     @classmethod
@@ -73,16 +78,16 @@ class ColumnFilter(BaseModel):
 
 class PeriodQuery(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True)
-    project_id: str=Field(pattern=r'^[A-Za-z0-9_-]{1,100}$')
-    current_start: str
-    current_end: str
-    previous_start: str
-    previous_end: str
-    current_test_start: str|None=None
-    current_test_end: str|None=None
-    previous_test_start: str|None=None
-    previous_test_end: str|None=None
-    top_limit: int=Field(default=10,ge=1,le=200)
+    project_id: ProjectId
+    current_start: CalendarDate=Field(description='必填：本期统计开始日，含当天。与current_end组成闭区间，最多3660个自然日。')
+    current_end: CalendarDate=Field(description='必填：本期统计结束日，含当天；不得早于current_start。')
+    previous_start: CalendarDate=Field(description='必填：上期统计开始日，含当天。与previous_end组成闭区间，最多3660个自然日。')
+    previous_end: CalendarDate=Field(description='必填：上期统计结束日，含当天；不得早于previous_start。上期/本期不强制等长、不强制先后或不重叠。')
+    current_test_start: CalendarDate|None=Field(default=None,description='可选：本期素材测试开始日，必须与current_test_end成对填非空值；两者省略或均null则默认本期统计起止。仅影响05—06及AI类型统计。')
+    current_test_end: CalendarDate|None=Field(default=None,description='可选：本期素材测试结束日，含当天，不早于测试开始，最长3660天；可早于或超出本期统计范围。')
+    previous_test_start: CalendarDate|None=Field(default=None,description='可选：上期素材测试开始日，与previous_test_end成对；两者省略或均null默认上期统计起止。')
+    previous_test_end: CalendarDate|None=Field(default=None,description='可选：上期素材测试结束日，含当天，不早于测试开始，最长3660天。不是Excel文件上传日期。')
+    top_limit: int=Field(default=10,ge=1,le=200,description='看板TOP展示数量，默认10、1—200整数；不限制query_materials的完整候选范围。')
 
     @model_validator(mode='after')
     def ranges(self):

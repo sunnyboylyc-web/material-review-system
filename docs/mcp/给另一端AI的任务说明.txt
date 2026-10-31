@@ -2,7 +2,7 @@
 
 先读“另一端系统接入说明.md”和consumer-config.example.json。由你们后端使用标准MCP Streamable HTTP SDK发起连接，前端负责名称、地址、启用、超时、测试连接和工具列表。正式鉴权改为Bearer Token，提供密钥字段（安全存储、不回显、不入日志）；用户不需要填写素材视界数据库/平台账号或登录网页。
 
-当前本地合成MCP地址http://127.0.0.1:24573/mcp，仅当客户端后端与服务在同一电脑可用；你们后端在另一台机器时先实现模块，待部署后替换实际可达URL。不可把你们服务器的127.0.0.1误认为这台开发机，不直接连接数据大屏数据库来“解决连不上”。
+正式完整地址见单独交付的consumer-config.production.json；example地址不是正式服务。无须先读历史聊天，连接后按工具发现和get_data_guide执行。不可把你们服务器的127.0.0.1误认为开发机，不直接连接数据大屏数据库来“解决连不上”。
 
 连接后工具发现必须有7项；先get_data_guide/list_projects，再get_period_review，凭同一个reportId查query_materials/get_material_trend。读missingDates/status/partial/warnings，保留原分组与四日期，整个分页同版本；过期重查整轮。服务返回SYNTHETIC时只能联调不能写真实复盘业绩。
 
@@ -10,4 +10,6 @@
 
 正式地址和密钥由维护方单独给出，样例地址不可当真实连接地址；不要自行触发采集/保存复盘或添加写入工具。完成后告诉用户模块可配置项、所用SDK和测试连接结果。
 
-更新：用户2026-10-31要求加密钥，旧none方案已覆盖；本地24573仍可作为无密钥纯合成演示，正式配置Bearer及CURRENT_FACTS，密钥本体单独配置。
+服务1.2.1，guide 1.1.0；客户端启用format=date校验，四个统计日期必填，测试日期每对成对/缺省默认。跨字段先后/成对/区间限制仍由服务端校验；合法业务接口不改。错误例子见error-examples.json，正确参数例子见synthetic-calls.json，全为虚构数据。
+
+先处理HTTP401及MCP isError，再读structuredContent。参数/业务错误当前只有isError与content诊断文本，没有统一structuredContent.error字段；不要自造稳定错误码/字段API。共享Bearer无细粒度项目授权，403不代表项目权限不足。密钥不得进入前端、URL、日志或模型提示词。

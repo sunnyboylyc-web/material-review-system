@@ -157,4 +157,46 @@ class Boundaries(unittest.TestCase):
         finally:h.shutdown();h.server_close();t.join()
 
 
+class DiscoveryMetadata(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.server=build_server(DashboardService(FakeSource()),'bearer')
+        self.tools={t.name:t.model_dump(by_alias=True,exclude_none=True) for t in await self.server.list_tools()}
+
+    async def test_discovery_snapshot_matches_server_and_documents_every_parameter(self):
+        p=Path(__file__).resolve().parents[2]/'docs/mcp/tools-schema.json'
+        snapshot=json.loads(p.read_text(encoding='utf-8'))
+        self.assertEqual(self.tools,{t['name']:t for t in snapshot['tools']})
+        def check(schema):
+            for name,value in schema.get('properties',{}).items():
+                self.assertTrue(value.get('description') or value.get('$ref'),name)
+            for value in schema.get('$defs',{}).values():check(value)
+        for t in self.tools.values():
+            self.assertTrue(t['description']);check(t['inputSchema'])
+            self.assertTrue(t['annotations']['readOnlyHint']);self.assertFalse(t['annotations']['destructiveHint'])
+
+    async def test_connector_checks_examples_and_four_required_dates(self):
+        from jsonschema import Draft202012Validator,FormatChecker
+        schemas={k:v['inputSchema'] for k,v in self.tools.items()}
+        examples=json.loads((Path(__file__).resolve().parents[2]/'docs/mcp/synthetic-calls.json').read_text(encoding='utf-8'))
+        for item in examples['calls']:
+            call=item['request']['params'];Draft202012Validator(schemas[call['name']],format_checker=FormatChecker()).validate(call['arguments'])
+        s=schemas['get_period_review'];q={'project_id':'demo-project','current_start':'2026-01-01','current_end':'2026-01-07','previous_start':'2025-12-25','previous_end':'2025-12-31'}
+        validator=Draft202012Validator(s,format_checker=FormatChecker())
+        for field in ('project_id','current_start','current_end','previous_start','previous_end'):
+            missing={k:v for k,v in q.items() if k!=field};self.assertTrue(list(validator.iter_errors({'query':missing})),field)
+        for bad in ('2026/01/01','2026-02-30'):
+            self.assertTrue(list(validator.iter_errors({'query':{**q,'current_start':bad}})))
+        daily=Draft202012Validator(schemas['get_daily_top'],format_checker=FormatChecker())
+        self.assertTrue(list(daily.iter_errors({'project_id':'demo','date':'2026-01-01','limit':201})))
+
+    async def test_cross_field_constraints_still_enforced_and_valid_queries_unchanged(self):
+        q=query();self.assertEqual(q.current_start,q.current_test_start)
+        q.current_end=q.current_start;self.assertEqual(q.current_start,q.ranges().current_end)
+        for change in ({'current_end':'2025-12-31'},{'current_test_start':'2025-01-01'}):
+            with self.assertRaises(ValidationError):PeriodQuery(**{**query().model_dump(),**change,**({'current_test_end':None} if 'current_test_start' in change else {})})
+        guide=(await self.server.call_tool('get_data_guide',{})).structured_content
+        self.assertEqual('bearer',guide['connection']['authentication']);self.assertTrue(guide['dateConstraints']['inclusiveEnd'])
+        self.assertIn('Uniform application error envelope',guide['errorHandling']['notImplemented'][1])
+
+
 if __name__=='__main__':unittest.main()

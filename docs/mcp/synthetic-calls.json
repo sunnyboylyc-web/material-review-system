@@ -1,0 +1,14 @@
+{
+  "kind": "SYNTHETIC_CALL_EXAMPLES_NOT_REAL_PROJECTS_OR_REPORTS",
+  "note": "These are valid-shaped MCP tools/call examples, not runnable production identities. First discover the real project ID with list_projects; replace the synthetic report_id and material_id from the actual preceding result. A JSON-RPC request id is chosen by the client and is unrelated to reportId.",
+  "calls": [
+    {"purpose":"读取口径", "request":{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_data_guide","arguments":{}}}},
+    {"purpose":"发现项目ID", "request":{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_projects","arguments":{}}}},
+    {"purpose":"四个必填统计日期；不填测试日期默认对应统计周期", "request":{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"get_period_review","arguments":{"query":{"project_id":"demo-project","current_start":"2026-01-01","current_end":"2026-01-07","previous_start":"2025-12-25","previous_end":"2025-12-31"}}}}},
+    {"purpose":"扩展测试日期以查看老素材在本期的表现", "request":{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_period_review","arguments":{"query":{"project_id":"demo-project","current_start":"2026-01-01","current_end":"2026-01-07","previous_start":"2025-12-25","previous_end":"2025-12-31","current_test_start":"2024-01-01","current_test_end":"2026-01-07","previous_test_start":"2024-01-01","previous_test_end":"2025-12-31","top_limit":10}}}}},
+    {"purpose":"同报告名称或ID搜索、指标区间筛选，百分比3代表3%，先筛再分页", "request":{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"query_materials","arguments":{"query":{"report_id":"abcdefabcdefabcdefabcdefabcdefab","group":"original","search":"虚构视频","filters":[{"field":"roi","operator":"gte","value":1.5},{"field":"ctr","operator":"between","value":3,"to":10}],"offset":0,"page_size":20,"include_daily_spend":false}}}}},
+    {"purpose":"从明细返回的materialId取得同组趋势", "request":{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"get_material_trend","arguments":{"report_id":"abcdefabcdefabcdefabcdefabcdefab","material_id":"demo-material","group":"original"}}}},
+    {"purpose":"单日TOP；候选范围最多200", "request":{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"get_daily_top","arguments":{"project_id":"demo-project","date":"2026-01-07","limit":10}}}},
+    {"purpose":"最近自动来源统计日，不等于完整覆盖或采集健康", "request":{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"get_project_freshness","arguments":{"project_id":"demo-project"}}}}
+  ]
+}

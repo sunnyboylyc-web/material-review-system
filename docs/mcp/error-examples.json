@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "mcp-error-examples-1.0.0",
+  "kind": "SYNTHETIC_INPUT_OBSERVED_RESPONSES",
+  "serverVersion": "1.2.1",
+  "examples": [
+    {
+      "kind": "missing_parameter",
+      "layer": "MCP_TOOL_RESULT",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {
+          "name": "get_period_review",
+          "arguments": {
+            "query": {
+              "project_id": "demo-project",
+              "current_start": "2026-01-01",
+              "current_end": "2026-01-07",
+              "previous_start": "2025-12-25"
+            }
+          }
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "Error executing tool get_period_review: 1 validation error for get_period_reviewArguments\nquery.previous_end\n  Field required [type=missing, input_value={'project_id': 'demo-proj...us_start': '2025-12-25'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing"
+            }
+          ],
+          "isError": true,
+          "resultType": "complete"
+        }
+      },
+      "note": "Observed SDK result with synthetic input. content text is diagnostic, not a stable field-code API; structuredContent error envelope is not implemented."
+    },
+    {
+      "kind": "invalid_calendar_date",
+      "layer": "MCP_TOOL_RESULT",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {
+          "name": "get_period_review",
+          "arguments": {
+            "query": {
+              "project_id": "demo-project",
+              "current_start": "2026-02-30",
+              "current_end": "2026-01-07",
+              "previous_start": "2025-12-25",
+              "previous_end": "2025-12-31"
+            }
+          }
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "Error executing tool get_period_review: 1 validation error for get_period_reviewArguments\nquery\n  Value error, DATE_INVALID [type=value_error, input_value={'project_id': 'demo-proj...ious_end': '2025-12-31'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error"
+            }
+          ],
+          "isError": true,
+          "resultType": "complete"
+        }
+      },
+      "note": "Observed SDK result with synthetic input. content text is diagnostic, not a stable field-code API; structuredContent error envelope is not implemented."
+    },
+    {
+      "kind": "missing_or_invalid_authorization",
+      "layer": "HTTP_BEFORE_MCP",
+      "httpStatus": 401,
+      "headers": {
+        "Content-Type": "application/json",
+        "WWW-Authenticate": "Bearer realm=\"material-review-mcp\""
+      },
+      "body": {
+        "error": "MCP_BEARER_TOKEN_REQUIRED_OR_INVALID"
+      },
+      "note": "No per-project scopes exist. A valid shared key permits all seven read-only tools; do not claim an unimplemented per-project 403."
+    }
+  ]
+}
