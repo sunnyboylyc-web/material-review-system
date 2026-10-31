@@ -41,12 +41,15 @@
   "consumerGuide": "docs/mcp/另一端系统接入说明.md",
   "productionDeploymentPerformed": "See exact deployment acceptance, not this static contract",
   "credentialDistribution": "restricted file, excluded from Git and integration packages",
-  "serverVersion": "1.2.1",
-  "guideVersion": "mcp-dashboard-guide-1.1.0",
+  "serverVersion": "1.2.2",
+  "guideVersion": "mcp-dashboard-guide-1.1.1",
   "metadataSchema": "docs/mcp/tools-schema.json",
   "syntheticCalls": "docs/mcp/synthetic-calls.json",
   "errorExamples": "docs/mcp/error-examples.json",
   "dateValidation": "Schema: required, pattern and format=date; server: real dates, year1900..2200, paired dates, ordering and inclusive length<=3660",
   "structuredApplicationErrorEnvelope": false,
-  "perProjectScopes": false
+  "perProjectScopes": false,
+  "websiteLoginDependency": false,
+  "internalReadIdentity": "independent internal credential, six existing GET routes only; not configured by consumers",
+  "externalConnectionChanged": false
 }

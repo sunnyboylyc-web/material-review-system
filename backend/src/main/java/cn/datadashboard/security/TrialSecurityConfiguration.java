@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 
 /** Trial-cloud policy, explicitly imported by the authenticated runner. */
 @Configuration(proxyBeanMethods = false)
+@org.springframework.context.annotation.Import(McpServiceSecurityConfiguration.class)
 public class TrialSecurityConfiguration {
     private static final Pattern BCRYPT = Pattern.compile("\\$2[aby]\\$[0-9]{2}\\$[./A-Za-z0-9]{53}");
 

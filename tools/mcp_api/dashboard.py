@@ -123,12 +123,13 @@ class NoRedirect(HTTPRedirectHandler):
 
 
 class DashboardSource:
-    def __init__(self,base_url,synthetic=False):
+    def __init__(self,base_url,synthetic=False,service_token=None):
         u=urlsplit(base_url)
         if u.username or u.password or u.query or u.fragment or not u.hostname:raise QueryError('SOURCE_URL_INVALID')
         if u.scheme!='https' and not (u.scheme=='http' and u.hostname in {'127.0.0.1','localhost','::1'}):raise QueryError('SOURCE_HTTPS_OR_LOOPBACK_REQUIRED')
         if any(x in u.path for x in ('%','..','\\')):raise QueryError('SOURCE_PATH_INVALID')
-        self.base=base_url.rstrip('/');self.synthetic=synthetic
+        if service_token is not None and not re.fullmatch(r'[A-Za-z0-9_-]{32,512}',service_token):raise QueryError('SOURCE_SERVICE_CREDENTIAL_INVALID')
+        self.base=base_url.rstrip('/');self.synthetic=synthetic;self.service_token=service_token
         self.opener=build_opener(ProxyHandler({}),NoRedirect())
         self.limit=32*1024**2
 
@@ -136,7 +137,9 @@ class DashboardSource:
         if path!='/api/projects' and not re.fullmatch(r'/api/projects/[A-Za-z0-9_-]{1,100}/(?:review|review-materials|material-types|top|freshness)',path):
             raise QueryError('UPSTREAM_ROUTE_NOT_READ_ONLY')
         url=self.base+path+('?' + urlencode(params) if params else '')
-        request=Request(url,method='GET',headers={'Accept':'application/json','User-Agent':'MaterialReviewMCP/1.0'})
+        headers={'Accept':'application/json','User-Agent':'MaterialReviewMCP/1.0'}
+        if self.service_token is not None:headers['X-Material-Read-Key']=self.service_token
+        request=Request(url,method='GET',headers=headers)
         try:
             with self.opener.open(request,timeout=90) as response:
                 if response.status!=200:raise QueryError('UPSTREAM_STATUS_INVALID')
@@ -145,7 +148,7 @@ class DashboardSource:
                 if len(body)>self.limit:raise QueryError('UPSTREAM_RESULT_TOO_LARGE_NARROW_PERIOD')
             return json.loads(body,parse_constant=lambda _:(_ for _ in ()).throw(QueryError('UPSTREAM_NONFINITE_NUMBER')))
         except HTTPError as e:
-            raise QueryError({404:'PROJECT_OR_RESOURCE_NOT_FOUND',400:'UPSTREAM_QUERY_REJECTED',503:'UPSTREAM_DATA_UNAVAILABLE'}.get(e.code,'UPSTREAM_HTTP_ERROR')) from None
+            raise QueryError({401:'UPSTREAM_SERVICE_AUTHENTICATION_FAILED',403:'UPSTREAM_SERVICE_AUTHENTICATION_FAILED',404:'PROJECT_OR_RESOURCE_NOT_FOUND',400:'UPSTREAM_QUERY_REJECTED',503:'UPSTREAM_DATA_UNAVAILABLE'}.get(e.code,'UPSTREAM_HTTP_ERROR')) from None
         except (URLError,TimeoutError,OSError):raise QueryError('UPSTREAM_UNAVAILABLE_OR_TIMEOUT') from None
         except (json.JSONDecodeError,UnicodeError):raise QueryError('UPSTREAM_JSON_INVALID') from None
 

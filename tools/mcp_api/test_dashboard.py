@@ -199,4 +199,30 @@ class DiscoveryMetadata(unittest.IsolatedAsyncioTestCase):
         self.assertIn('Uniform application error envelope',guide['errorHandling']['notImplemented'][1])
 
 
+class SourceServiceIdentity(unittest.TestCase):
+    def test_internal_key_is_get_only_not_external_bearer_and_401_never_falls_back(self):
+        internal='test-service-'+'q'*40;seen=[]
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self,*args):pass
+            def do_GET(self):
+                seen.append((self.path,self.headers.get('X-Material-Read-Key'),self.headers.get('Authorization'),self.headers.get('Cookie')))
+                if self.headers.get('X-Material-Read-Key')!=internal:
+                    self.send_response(401);self.end_headers();return
+                self.send_response(200);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(b'[]')
+        h=HTTPServer(('127.0.0.1',0),Handler);t=threading.Thread(target=h.serve_forever,daemon=True);t.start()
+        try:
+            url='http://127.0.0.1:'+str(h.server_port)
+            source=DashboardSource(url,service_token=internal);self.assertEqual([],source.get('/api/projects'))
+            self.assertEqual([('/api/projects',internal,None,None)],seen)
+            with self.assertRaisesRegex(QueryError,'AUTHENTICATION_FAILED'):
+                DashboardSource(url,service_token='wrong-service-'+'z'*40).get('/api/projects')
+            self.assertEqual(2,len(seen))
+            with self.assertRaisesRegex(QueryError,'READ_ONLY'):source.get('/api/operations/configuration')
+            self.assertEqual(2,len(seen))
+        finally:h.shutdown();h.server_close();t.join()
+    def test_malformed_internal_credential_fails_without_network(self):
+        for bad in ('short','header\ninjection',' ' * 40):
+            with self.assertRaisesRegex(QueryError,'CREDENTIAL_INVALID'):DashboardSource('http://127.0.0.1:1',service_token=bad)
+
+
 if __name__=='__main__':unittest.main()

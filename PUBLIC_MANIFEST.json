@@ -437,6 +437,11 @@
       "sha256": "3f569966a0c064103d49d182983c15a370ff3340d62501d31e913eacf0b9c371"
     },
     {
+      "path": "backend/src/main/java/cn/datadashboard/security/McpServiceSecurityConfiguration.java",
+      "bytes": 5752,
+      "sha256": "d83612ae37c12e41a0cdaa133c968d3cd322ac6043b98faf8246fbdbfad5170d"
+    },
+    {
       "path": "backend/src/main/java/cn/datadashboard/security/OperationActor.java",
       "bytes": 522,
       "sha256": "c82f5f04ad7d5614ae55a0479718756d9cd7fbace13d028c3642e021a0ae1fbf"
@@ -478,8 +483,8 @@
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/security/TrialSecurityConfiguration.java",
-      "bytes": 7985,
-      "sha256": "9b2d3a8970fc0c2a9ca806e86eb987940792b48fea3ab6c44f628549e28f36f6"
+      "bytes": 8071,
+      "sha256": "b6e0478324b9b868293fe9ad916e32ca6a66bb04b8be48f4c57911ea10c79faa"
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/security/TrialSessionController.java",
@@ -822,6 +827,11 @@
       "sha256": "8547739c626503450bba5deda313a678d08b362f8de158e48fdbb4c9df831898"
     },
     {
+      "path": "backend/src/test/java/cn/datadashboard/security/McpServiceSecurityConfigurationTest.java",
+      "bytes": 5433,
+      "sha256": "4ab9605b5cfff34a93adbb8d573c80839b313f71b27d8ce53037f73367562dd2"
+    },
+    {
       "path": "backend/src/test/java/cn/datadashboard/security/PeriodPreferenceControllerTest.java",
       "bytes": 2144,
       "sha256": "c57715788f3985ca3b20a8799f8bb3dbfa992fd50e3ca4657c513fb82f6f9a23"
@@ -903,8 +913,8 @@
     },
     {
       "path": "contracts/mcp/dashboard-readonly-v1.json",
-      "bytes": 1953,
-      "sha256": "2008095bc69a6bb88481564477fb73f5d409f9be04d8e8a1bcd48496f75d3533"
+      "bytes": 2146,
+      "sha256": "e147ac598f10ef36457a5f7e064b2d0e1bb4f3cbbba265f02f925ddc7cb57ae2"
     },
     {
       "path": "contracts/metric-selection-v1.json",
@@ -964,17 +974,17 @@
     {
       "path": "docs/mcp/tools-schema.json",
       "bytes": 20730,
-      "sha256": "3ae8ae897b857a3701e0955fc24b647c7a2eaa83899ad217a41c004cd13911df"
+      "sha256": "859ca30654f59cd543485f34c032c88b118088f25bf19403e1b84953012180d5"
     },
     {
       "path": "docs/mcp/另一端系统接入说明.md",
-      "bytes": 15741,
-      "sha256": "e5273970acea49423eefca4fb0af932b740bc0be191f3cc49d0bf36e4f294861"
+      "bytes": 17309,
+      "sha256": "97afc5de2321922b70c62aba4ece3f0ff7cd3164c80d4023f741168d06bd8f90"
     },
     {
       "path": "docs/mcp/给另一端AI的任务说明.txt",
-      "bytes": 2291,
-      "sha256": "93796ec64c38dd74f2c44c10e29a000a1382a9ea63d3a9ec793d0b858a3b2d37"
+      "bytes": 2645,
+      "sha256": "26431b53e7c8e40a3f450603883317bcb7e5fbff2b5717e532038ad4dc788381"
     },
     {
       "path": "docs/screenshots/01-workspace.png",
@@ -2248,13 +2258,13 @@
     },
     {
       "path": "tools/mcp_api/dashboard.py",
-      "bytes": 25297,
-      "sha256": "faedcf2094005586fa759d70562e8d884ce4d808c8d9270b4be4c1b257b09997"
+      "bytes": 25707,
+      "sha256": "01859f3bd5dae1c50e85d23fc0ffcfc7b4283703dea0f8b3a85183c29bf233e1"
     },
     {
       "path": "tools/mcp_api/guide.py",
-      "bytes": 10083,
-      "sha256": "eb7621169e76779f98c39a8b3f5a4c9eff7d3b75dc44c783d1d29311d2e29481"
+      "bytes": 11423,
+      "sha256": "992c07ffbe6a472067fa37ae7f5ed9f80517954b5d2c64dafa568e3013c37194"
     },
     {
       "path": "tools/mcp_api/probe_client.py",
@@ -2268,8 +2278,8 @@
     },
     {
       "path": "tools/mcp_api/server.py",
-      "bytes": 8658,
-      "sha256": "9bbb19daf919532e248b474d5497a765d46ae5189154110f5065c7c0db4339f5"
+      "bytes": 9096,
+      "sha256": "4a8610c0ec67b7af40039afcd7555242510ed7dd63bc5caa9333ded853e30a58"
     },
     {
       "path": "tools/mcp_api/start_demo.ps1",
@@ -2283,8 +2293,8 @@
     },
     {
       "path": "tools/mcp_api/test_dashboard.py",
-      "bytes": 16484,
-      "sha256": "06722a5199807be91890f07e248c8e1c56cd64c5757e74494f29bdf74f980039"
+      "bytes": 18256,
+      "sha256": "d0296fff25d0b329978138e76522ff4831a60e8f5c9eabd34bbdcf9de0a03476"
     },
     {
       "path": "tools/mcp_api/test_protocol.py",
