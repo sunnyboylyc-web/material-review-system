@@ -607,6 +607,11 @@
       "sha256": "2f20b2ae5b7e797138b70240b237ce5ed60b71cd96956b94c8fd7e29e98f4d8e"
     },
     {
+      "path": "backend/src/test/java/cn/datadashboard/calculation/McpDashboardDemoMain.java",
+      "bytes": 3943,
+      "sha256": "403c6c5dc62a3ab0db8fbbbe202c38b6e32a0320809773fa4b99f1eb339503a1"
+    },
+    {
       "path": "backend/src/test/java/cn/datadashboard/calculation/MetricArithmeticTest.java",
       "bytes": 6317,
       "sha256": "4537f8c2ad4e71edeab4d1a23cb750861439ac7ff53cfa7d3f633cbdb4c0eae0"
@@ -897,6 +902,11 @@
       "sha256": "87967b1cef7921960b8acb06c8dfa24745c42b55afad432a9b0d03d75e36c188"
     },
     {
+      "path": "contracts/mcp/dashboard-readonly-v1.json",
+      "bytes": 1495,
+      "sha256": "06ee369b10610bb78789ab7dde6c50822d050bdee7f5c44d62a89ecded03bad1"
+    },
+    {
       "path": "contracts/metric-selection-v1.json",
       "bytes": 5228,
       "sha256": "23a0e2e86c5710cc253b8bdd42c47ae8c437c81ebd2269f4e289c2adf6c7ae5a"
@@ -935,6 +945,26 @@
       "path": "contracts/weekly-database-backup-v1.json",
       "bytes": 3239,
       "sha256": "292a8aeb23f5e097c07c74fd7a63b30c0404cd5c73540d5862e05f7744da95c2"
+    },
+    {
+      "path": "docs/mcp/consumer-config.example.json",
+      "bytes": 768,
+      "sha256": "9a5fd2b166781f1947572cf493fae8298a072de31adff9af0bf4d092dd2ddbee"
+    },
+    {
+      "path": "docs/mcp/tools-schema.json",
+      "bytes": 13631,
+      "sha256": "ee31b2408281dce87145cf02e636dab08ed62f9d37d0cc8b588bdedd1d9623ab"
+    },
+    {
+      "path": "docs/mcp/另一端系统接入说明.md",
+      "bytes": 10470,
+      "sha256": "9234addb51b6fb3320ba621f0543c816a1b5be07115723059dbdc49ebd893b08"
+    },
+    {
+      "path": "docs/mcp/给另一端AI的任务说明.txt",
+      "bytes": 1837,
+      "sha256": "f7d2560b50df6d9a1f9e431fea0a0ab930acf19ceed11d69e59edaa6bdefc7fa"
     },
     {
       "path": "docs/screenshots/01-workspace.png",
@@ -2190,6 +2220,66 @@
       "path": "tools/manual_history/verify_manual_history_bundle.py",
       "bytes": 27391,
       "sha256": "0ddffb7d4b71502ea7a421673c5b325bb1c6386e610207c964c711d882147f70"
+    },
+    {
+      "path": "tools/mcp_api/README.md",
+      "bytes": 4283,
+      "sha256": "3a33dab0774339e48e30841d14dbaf3da1452153c41c70a8a73baf95bd5e4341"
+    },
+    {
+      "path": "tools/mcp_api/__init__.py",
+      "bytes": 56,
+      "sha256": "84bbdeb517661601a8ba2ecb3ea86fe49de2ddcbc237116d49f742bb00a13d80"
+    },
+    {
+      "path": "tools/mcp_api/auth.py",
+      "bytes": 1470,
+      "sha256": "bc5ac437378c8e863cb1bc72c8d6162728ad0e12c5bf6b167660e9df97ad377a"
+    },
+    {
+      "path": "tools/mcp_api/dashboard.py",
+      "bytes": 22336,
+      "sha256": "38d3cbb9d3528e129034907f3fdc3e3411f6036ea0b2c391dda7b3e6e1c0b6b6"
+    },
+    {
+      "path": "tools/mcp_api/guide.py",
+      "bytes": 5420,
+      "sha256": "0ab1c4a74cdeb7df41986ee9ada86fac2b020d293fcf0bc3137077e5960e7b4c"
+    },
+    {
+      "path": "tools/mcp_api/probe_client.py",
+      "bytes": 3972,
+      "sha256": "9bfb50458809e13b754ef7b426bc3de3f4b5c8a91ee15885414767ed4c043832"
+    },
+    {
+      "path": "tools/mcp_api/requirements.txt",
+      "bytes": 630,
+      "sha256": "4841442fd95fae10da3d1e496e614d4c368b252084aec95188d602f6c416c1ee"
+    },
+    {
+      "path": "tools/mcp_api/server.py",
+      "bytes": 6546,
+      "sha256": "f037e4bb561b5674a356e71f5b7fae80f0aa5dd61dc7522f0257eb24c2881455"
+    },
+    {
+      "path": "tools/mcp_api/start_demo.ps1",
+      "bytes": 2819,
+      "sha256": "84245e29eae26a33abf7bd0de6f661b9c0048bd8773b09a5c0429af4d34f4e72"
+    },
+    {
+      "path": "tools/mcp_api/test_auth.py",
+      "bytes": 2578,
+      "sha256": "9f9409bdcc6fdd5d86cd7c8a8e9225b91da8fb0a5b00b97a5cd77aa6def0040f"
+    },
+    {
+      "path": "tools/mcp_api/test_dashboard.py",
+      "bytes": 13238,
+      "sha256": "c0b95e6cc5ccaf48659b9628cb772afb4a2de976e113c1b62c3dcfb97d81538f"
+    },
+    {
+      "path": "tools/mcp_api/test_protocol.py",
+      "bytes": 4703,
+      "sha256": "687b324a3c20bb24316618944085129707c655f18282a95cf578b5d6618600ef"
     }
   ]
 }

@@ -1,0 +1,13 @@
+请在你们系统的数据板块实现一个MCP连接配置模块，不是把AI直接接到素材视界网页。
+
+先读“另一端系统接入说明.md”和consumer-config.example.json。由你们后端使用标准MCP Streamable HTTP SDK发起连接，前端负责名称、地址、启用、超时、测试连接和工具列表。正式鉴权改为Bearer Token，提供密钥字段（安全存储、不回显、不入日志）；用户不需要填写素材视界数据库/平台账号或登录网页。
+
+当前本地合成MCP地址http://127.0.0.1:24573/mcp，仅当客户端后端与服务在同一电脑可用；你们后端在另一台机器时先实现模块，待部署后替换实际可达URL。不可把你们服务器的127.0.0.1误认为这台开发机，不直接连接数据大屏数据库来“解决连不上”。
+
+连接后工具发现必须有7项；先get_data_guide/list_projects，再get_period_review，凭同一个reportId查query_materials/get_material_trend。读missingDates/status/partial/warnings，保留原分组与四日期，整个分页同版本；过期重查整轮。服务返回SYNTHETIC时只能联调不能写真实复盘业绩。
+
+按服务inputSchema/outputSchema动态组参数，示例有嵌套query及$defs。schema快照只作联调参考，实际服务发现为准。官方SDK客户端示例在probe_client.py；不要把普通HTTP GET网页或健康页当成MCP测试成功。
+
+正式地址和密钥由维护方单独给出，样例地址不可当真实连接地址；不要自行触发采集/保存复盘或添加写入工具。完成后告诉用户模块可配置项、所用SDK和测试连接结果。
+
+更新：用户2026-10-31要求加密钥，旧none方案已覆盖；本地24573仍可作为无密钥纯合成演示，正式配置Bearer及CURRENT_FACTS，密钥本体单独配置。

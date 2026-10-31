@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "dashboard-readonly-mcp-1.0.0",
+  "status": "DEPLOYMENT_RECEIPTS_ARE_AUTHORITATIVE",
+  "transport": "streamable-http",
+  "authentication": "bearer",
+  "tools": [
+    "get_data_guide",
+    "list_projects",
+    "get_period_review",
+    "query_materials",
+    "get_material_trend",
+    "get_daily_top",
+    "get_project_freshness"
+  ],
+  "periodQueryModel": "tools/mcp_api/dashboard.py:PeriodQuery",
+  "materialQueryModel": "tools/mcp_api/server.py:MaterialQuery",
+  "sourceMethods": [
+    "GET"
+  ],
+  "sourceRoutes": [
+    "/api/projects",
+    "/api/projects/{projectId}/review",
+    "/api/projects/{projectId}/material-types",
+    "/api/projects/{projectId}/review-materials",
+    "/api/projects/{projectId}/top",
+    "/api/projects/{projectId}/freshness"
+  ],
+  "dateTimezone": "Asia/Shanghai",
+  "maxRangeDays": 3660,
+  "periodCandidateScope": "complete eligible current-period scope before filtering",
+  "dailyCandidateLimit": 200,
+  "reportTtlSeconds": 900,
+  "maxCachedReports": 4,
+  "maxCachedBytes": 67108864,
+  "maxMaterialPageRows": 100,
+  "maxMaterialPageBytes": 2097152,
+  "queryErrorsAreNotEmptyData": true,
+  "allKnownUnknownPartialAndCoverageFlagsPreserved": true,
+  "newKeyRequired": true,
+  "writeTools": [],
+  "consumerGuide": "docs/mcp/另一端系统接入说明.md",
+  "productionDeploymentPerformed": "See exact deployment acceptance, not this static contract",
+  "credentialDistribution": "restricted file, excluded from Git and integration packages"
+}

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "material-review-mcp-consumer-config-1.0.0",
+  "name": "素材视界",
+  "enabled": true,
+  "transport": "streamable-http",
+  "url": "https://mcp.example.invalid/mcp",
+  "authentication": {
+    "type": "bearer",
+    "token": "<通过受限方式单独填写>"
+  },
+  "headers": {},
+  "timeoutSeconds": 300,
+  "readOnly": true,
+  "allowedTools": [
+    "get_data_guide",
+    "list_projects",
+    "get_period_review",
+    "query_materials",
+    "get_material_trend",
+    "get_daily_top",
+    "get_project_freshness"
+  ],
+  "expectedDataMode": "CURRENT_FACTS",
+  "note": "Recommended consumer SYSTEM configuration; replace example URL with the operator-delivered endpoint. Bearer token is configured separately, never distributed with this example."
+}

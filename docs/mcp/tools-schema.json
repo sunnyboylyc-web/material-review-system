@@ -1,0 +1,481 @@
+{
+  "schemaVersion": "material-review-mcp-tools-snapshot-1.0.0",
+  "transport": "streamable-http",
+  "protocolVersionVerified": "2025-11-25",
+  "serverInfo": {
+    "name": "Material Review System",
+    "version": "1.2.0"
+  },
+  "authentication": "bearer",
+  "tools": [
+    {
+      "name": "get_data_guide",
+      "description": "获取字段单位、看板映射、四日期、AI分类、分页和数据限制。接入和复盘前先读。",
+      "inputSchema": {
+        "properties": {},
+        "type": "object",
+        "title": "get_data_guideArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true,
+        "title": "get_data_guideDictOutput"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_projects",
+      "description": "列出可复盘的启用项目，不返回广告账户配置、授权或运维资料。",
+      "inputSchema": {
+        "properties": {},
+        "type": "object",
+        "title": "list_projectsArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true,
+        "title": "list_projectsDictOutput"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_period_review",
+      "description": "按项目/本期/上期及各自素材测试周期读取01—06及AI看板。无需网页刷新，不保存复盘。先查此工具再用reportId读取明细；四日期回传，未指定测试周期时默认对应统计周期。",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "$ref": "#/$defs/PeriodQuery"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object",
+        "$defs": {
+          "PeriodQuery": {
+            "additionalProperties": false,
+            "properties": {
+              "project_id": {
+                "pattern": "^[A-Za-z0-9_-]{1,100}$",
+                "title": "Project Id",
+                "type": "string"
+              },
+              "current_start": {
+                "title": "Current Start",
+                "type": "string"
+              },
+              "current_end": {
+                "title": "Current End",
+                "type": "string"
+              },
+              "previous_start": {
+                "title": "Previous Start",
+                "type": "string"
+              },
+              "previous_end": {
+                "title": "Previous End",
+                "type": "string"
+              },
+              "current_test_start": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Current Test Start"
+              },
+              "current_test_end": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Current Test End"
+              },
+              "previous_test_start": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Previous Test Start"
+              },
+              "previous_test_end": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Previous Test End"
+              },
+              "top_limit": {
+                "default": 10,
+                "maximum": 200,
+                "minimum": 1,
+                "title": "Top Limit",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "project_id",
+              "current_start",
+              "current_end",
+              "previous_start",
+              "previous_end"
+            ],
+            "title": "PeriodQuery",
+            "type": "object"
+          }
+        },
+        "title": "get_period_reviewArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true,
+        "title": "get_period_reviewDictOutput"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "query_materials",
+      "description": "在同一reportId完整候选内先筛名称/ID/指标再分页，默认20条最多100；百分比筛选3代表3%。类型组可用cpc，整体/新老组无该字段时明确拒绝。每日报告只涵盖TOP200候选。",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "$ref": "#/$defs/MaterialQuery"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object",
+        "$defs": {
+          "ColumnFilter": {
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "enum": [
+                  "currentSpend",
+                  "previousSpend",
+                  "roi",
+                  "ctr",
+                  "cvr",
+                  "cpm",
+                  "cpc",
+                  "creationDate",
+                  "spendShare",
+                  "dayRoi",
+                  "annualRoi",
+                  "windowRoi",
+                  "recent3Orders",
+                  "recent3Spend",
+                  "recent3Cpc",
+                  "recent3Cpm",
+                  "recent3Roi",
+                  "lifetimeSpend",
+                  "lifetimeRoi",
+                  "windowSpend",
+                  "recent3Impressions",
+                  "recent3Clicks",
+                  "recent3Ctr",
+                  "recent3Cvr"
+                ],
+                "title": "Field",
+                "type": "string"
+              },
+              "operator": {
+                "enum": [
+                  "eq",
+                  "ne",
+                  "gt",
+                  "gte",
+                  "lt",
+                  "lte",
+                  "between",
+                  "in",
+                  "status"
+                ],
+                "title": "Operator",
+                "type": "string"
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Value"
+              },
+              "to": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "To"
+              },
+              "values": {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ]
+                },
+                "maxItems": 30,
+                "title": "Values",
+                "type": "array"
+              },
+              "statuses": {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 10,
+                "title": "Statuses",
+                "type": "array"
+              }
+            },
+            "required": [
+              "field",
+              "operator"
+            ],
+            "title": "ColumnFilter",
+            "type": "object"
+          },
+          "MaterialQuery": {
+            "additionalProperties": false,
+            "properties": {
+              "report_id": {
+                "pattern": "^[a-f0-9]{32}$",
+                "title": "Report Id",
+                "type": "string"
+              },
+              "group": {
+                "default": "overall",
+                "enum": [
+                  "overall",
+                  "new",
+                  "historical",
+                  "aigc",
+                  "original",
+                  "mixed",
+                  "other",
+                  "business",
+                  "department"
+                ],
+                "title": "Group",
+                "type": "string"
+              },
+              "search": {
+                "default": "",
+                "maxLength": 200,
+                "title": "Search",
+                "type": "string"
+              },
+              "filters": {
+                "items": {
+                  "$ref": "#/$defs/ColumnFilter"
+                },
+                "maxItems": 20,
+                "title": "Filters",
+                "type": "array"
+              },
+              "offset": {
+                "default": 0,
+                "maximum": 100000,
+                "minimum": 0,
+                "title": "Offset",
+                "type": "integer"
+              },
+              "page_size": {
+                "default": 20,
+                "maximum": 100,
+                "minimum": 1,
+                "title": "Page Size",
+                "type": "integer"
+              },
+              "include_daily_spend": {
+                "default": false,
+                "title": "Include Daily Spend",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "report_id"
+            ],
+            "title": "MaterialQuery",
+            "type": "object"
+          }
+        },
+        "title": "query_materialsArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true,
+        "title": "query_materialsDictOutput"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_material_trend",
+      "description": "同一复盘结果中指定素材的来源指标及逐日消耗。只提供来源实际包含的每日消耗，不补造每日ROI或订单。",
+      "inputSchema": {
+        "properties": {
+          "report_id": {
+            "title": "Report Id",
+            "type": "string"
+          },
+          "material_id": {
+            "title": "Material Id",
+            "type": "string"
+          },
+          "group": {
+            "default": "overall",
+            "enum": [
+              "overall",
+              "new",
+              "historical",
+              "aigc",
+              "original",
+              "mixed",
+              "other",
+              "business",
+              "department"
+            ],
+            "title": "Group",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report_id",
+          "material_id"
+        ],
+        "type": "object",
+        "title": "get_material_trendArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true,
+        "title": "get_material_trendDictOutput"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_daily_top",
+      "description": "读取每日TOP榜单/已有趋势指标，默认显示10最多200。返回reportId供筛选/趋势，候选限上游TOP200，不保证覆盖全部项目素材。",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "limit": {
+            "default": 10,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "date"
+        ],
+        "type": "object",
+        "title": "get_daily_topArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true,
+        "title": "get_daily_topDictOutput"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_project_freshness",
+      "description": "最近自动来源统计日；不等于人工最新日期，不证明中间无缺日，缺日请看周期coverage。",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object",
+        "title": "get_project_freshnessArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true,
+        "title": "get_project_freshnessDictOutput"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    }
+  ]
+}
