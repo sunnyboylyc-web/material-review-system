@@ -959,7 +959,7 @@
     {
       "path": "docs/mcp/consumer-config.example.json",
       "bytes": 768,
-      "sha256": "9a5fd2b166781f1947572cf493fae8298a072de31adff9af0bf4d092dd2ddbee"
+      "sha256": "080b5c3a614001795b566fcc82f7da9370ef7094d079a008f27837887d7652a5"
     },
     {
       "path": "docs/mcp/error-examples.json",
@@ -973,18 +973,18 @@
     },
     {
       "path": "docs/mcp/tools-schema.json",
-      "bytes": 20730,
-      "sha256": "859ca30654f59cd543485f34c032c88b118088f25bf19403e1b84953012180d5"
+      "bytes": 20741,
+      "sha256": "799622342879f1803e2db4f7b0530f70bb776a597854616d1f762e013e6aff91"
     },
     {
       "path": "docs/mcp/另一端系统接入说明.md",
-      "bytes": 17309,
-      "sha256": "97afc5de2321922b70c62aba4ece3f0ff7cd3164c80d4023f741168d06bd8f90"
+      "bytes": 6553,
+      "sha256": "2c2b38a97004e457b5c181e560323b25fe555df3a5804787698f06ac0337a214"
     },
     {
       "path": "docs/mcp/给另一端AI的任务说明.txt",
-      "bytes": 2645,
-      "sha256": "26431b53e7c8e40a3f450603883317bcb7e5fbff2b5717e532038ad4dc788381"
+      "bytes": 1578,
+      "sha256": "04d9c065eb89678b8c90c3b2334f58a267fa476bae9bbfe7f2850e4eb4ad3e39"
     },
     {
       "path": "docs/screenshots/01-workspace.png",
@@ -2243,8 +2243,8 @@
     },
     {
       "path": "tools/mcp_api/README.md",
-      "bytes": 4283,
-      "sha256": "3a33dab0774339e48e30841d14dbaf3da1452153c41c70a8a73baf95bd5e4341"
+      "bytes": 5009,
+      "sha256": "09e881369a8f9b0d973065eb80a994b6bed5bab6199750136493136f4b908e20"
     },
     {
       "path": "tools/mcp_api/__init__.py",
@@ -2253,8 +2253,8 @@
     },
     {
       "path": "tools/mcp_api/auth.py",
-      "bytes": 1470,
-      "sha256": "bc5ac437378c8e863cb1bc72c8d6162728ad0e12c5bf6b167660e9df97ad377a"
+      "bytes": 2910,
+      "sha256": "cf1c0731f3170121a96dccb8033339b286bec6f1a6e987e153daac88326670c2"
     },
     {
       "path": "tools/mcp_api/dashboard.py",
@@ -2263,13 +2263,13 @@
     },
     {
       "path": "tools/mcp_api/guide.py",
-      "bytes": 11423,
-      "sha256": "992c07ffbe6a472067fa37ae7f5ed9f80517954b5d2c64dafa568e3013c37194"
+      "bytes": 12042,
+      "sha256": "e3f745a01289954174ca006fa2861e72d15f2274f04a09a12b7604ce0ff40fac"
     },
     {
       "path": "tools/mcp_api/probe_client.py",
-      "bytes": 3972,
-      "sha256": "9bfb50458809e13b754ef7b426bc3de3f4b5c8a91ee15885414767ed4c043832"
+      "bytes": 4761,
+      "sha256": "2c77a614d828341e70f9e5a790ca4075ce19c9e8d9bad1625511a5594c1e3235"
     },
     {
       "path": "tools/mcp_api/requirements.txt",
@@ -2278,8 +2278,8 @@
     },
     {
       "path": "tools/mcp_api/server.py",
-      "bytes": 9096,
-      "sha256": "4a8610c0ec67b7af40039afcd7555242510ed7dd63bc5caa9333ded853e30a58"
+      "bytes": 9214,
+      "sha256": "9a79be268de7562b7c82aab5fb067103676ba061f42520182d8ecc6f6f4cc5a7"
     },
     {
       "path": "tools/mcp_api/start_demo.ps1",
@@ -2288,8 +2288,8 @@
     },
     {
       "path": "tools/mcp_api/test_auth.py",
-      "bytes": 2578,
-      "sha256": "9f9409bdcc6fdd5d86cd7c8a8e9225b91da8fb0a5b00b97a5cd77aa6def0040f"
+      "bytes": 4388,
+      "sha256": "2c1d185c7ba7783f210a4442860669127ff2cb9c7bc7a566240205bfcfbcf0d5"
     },
     {
       "path": "tools/mcp_api/test_dashboard.py",

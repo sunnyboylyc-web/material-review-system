@@ -4,9 +4,9 @@
   "protocolVersionVerified": "2025-11-25",
   "serverInfo": {
     "name": "Material Review System",
-    "version": "1.2.2"
+    "version": "1.2.3"
   },
-  "authentication": "bearer",
+  "authentication": "url-key-or-bearer",
   "source": "Generated from MCP tools/list; verify against the connected server on each connection.",
   "tools": [
     {

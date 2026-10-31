@@ -1,17 +1,11 @@
-请在你们系统的数据板块实现一个MCP连接配置模块，不是把AI直接接到素材视界网页。
+请接入素材视界现有只读MCP，不重做业务接口。
 
-最新服务1.2.2/guide1.1.1：网站登录与内部只读服务身份已分离，外部URL/Bearer密钥及7工具参数不变，现有连接器无需改配置。内部服务凭据仅由维护方保存，不能要求用户在MCP配置界面填写；网站当前仍免登录。将来添加外层SSO/统一网关时维护方仍须保留MCP独立入口。
+配置界面只要求：服务器名称、传输类型HTTP（Streamable HTTP）、服务器URL。URL从用户单独TXT复制，已包含API_KEY密钥；不要让用户填写token、Authorization或自定义Headers。若框架强制认证类型，选择不额外添加认证头，服务仍会验证URL密钥。原Bearer方式仅供既有客户端兼容。
 
-先读“另一端系统接入说明.md”和consumer-config.example.json。由你们后端使用标准MCP Streamable HTTP SDK发起连接，前端负责名称、地址、启用、超时、测试连接和工具列表。正式鉴权改为Bearer Token，提供密钥字段（安全存储、不回显、不入日志）；用户不需要填写素材视界数据库/平台账号或登录网页。
+整个URL是秘密：后端受限存储，界面掩码；日志、错误、监控、导出、模型上下文隐藏查询密钥。保持正常TLS验证，不把URL改为IP，不丢失/重复拼接查询参数，不跟随跨域重定向。
 
-正式完整地址见单独交付的consumer-config.production.json；example地址不是正式服务。无须先读历史聊天，连接后按工具发现和get_data_guide执行。不可把你们服务器的127.0.0.1误认为开发机，不直接连接数据大屏数据库来“解决连不上”。
+建议超时300秒。连接后initialize、tools/list、get_data_guide、list_projects；核实7工具只读和CURRENT_FACTS。按工具Schema动态组参，四统计日期必填、两对测试日期可省略默认对应周期，详见另一端系统接入说明.md及tools-schema.json。工具自动发现，使用者不需手填接口。
 
-连接后工具发现必须有7项；先get_data_guide/list_projects，再get_period_review，凭同一个reportId查query_materials/get_material_trend。读missingDates/status/partial/warnings，保留原分组与四日期，整个分页同版本；过期重查整轮。服务返回SYNTHETIC时只能联调不能写真实复盘业绩。
+复盘读取get_period_review，再凭同reportId查询明细/趋势；报告最长900秒且可能提前淘汰，过期重新整轮查询。缺失、未知、失败、部分数据不转成0，不混合不同报告分页。服务当前1.2.3、guide1.1.2，7工具及业务口径未变。
 
-按服务inputSchema/outputSchema动态组参数，示例有嵌套query及$defs。schema快照只作联调参考，实际服务发现为准。官方SDK客户端示例在probe_client.py；不要把普通HTTP GET网页或健康页当成MCP测试成功。
-
-正式地址和密钥由维护方单独给出，样例地址不可当真实连接地址；不要自行触发采集/保存复盘或添加写入工具。完成后告诉用户模块可配置项、所用SDK和测试连接结果。
-
-服务1.2.1，guide 1.1.0；客户端启用format=date校验，四个统计日期必填，测试日期每对成对/缺省默认。跨字段先后/成对/区间限制仍由服务端校验；合法业务接口不改。错误例子见error-examples.json，正确参数例子见synthetic-calls.json，全为虚构数据。
-
-先处理HTTP401及MCP isError，再读structuredContent。参数/业务错误当前只有isError与content诊断文本，没有统一structuredContent.error字段；不要自造稳定错误码/字段API。共享Bearer无细粒度项目授权，403不代表项目权限不足。密钥不得进入前端、URL、日志或模型提示词。
+网站账号/密码与MCP独立；不要索要内部服务凭据或直连数据库。HTTP401表示连接认证失败；业务错误先看isError。URL之外的真实配置与密钥不在本包内。正式网络已由用户反馈修复，仍需在客户端实际后端所在位置验收。

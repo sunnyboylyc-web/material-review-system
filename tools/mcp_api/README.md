@@ -1,3 +1,11 @@
+# 连接简化：URL密钥（1.2.3）
+
+正式使用者只配置名称、HTTP/Streamable HTTP、维护方单独交付的带API_KEY完整URL，无需token字段或自定义Headers。密钥未更换，旧Bearer兼容；双通道冲突/重复拒绝。完整URL按凭据保护，不写日志/Git/说明包。工具和业务口径不变，详见docs/mcp。
+
+部署必须同时关闭两个精确MCP反代入口的原始access/error日志和Uvicorn access日志；认证层清除query密钥及Authorization后才调用SDK。新增CDN/APM也须脱敏。仅关闭SDK日志不足以保护Nginx原始$request。
+
+下文为环境、合成联调及维护方历史启动示例，旧Bearer是兼容方式，不是新使用者必填配置。
+
 # 素材视界只读MCP（D247，本地版）
 
 另一端系统后端以MCP客户端连接本服务；服务只复用现有Java GET计算接口，不连接SQL、不保存复盘/日期、不采集/上传/删除/改配置。正式入口使用Bearer密钥，纯合成本地演示可为none；本地服务器固定127.0.0.1并核Host/Origin，不开放外网/CORS。MCP传输是Streamable HTTP，工具只读，不需要浏览器刷新。

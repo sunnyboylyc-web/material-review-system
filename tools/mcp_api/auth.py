@@ -1,7 +1,9 @@
-"""Static Bearer authentication at the ASGI boundary; no token value in RPC/config output."""
+"""URL-key and legacy Bearer authentication; credentials never reach MCP handlers."""
 import hmac
 import os
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode
+import re
 
 
 def load_token(path):
@@ -19,12 +21,31 @@ class BearerGate:
     async def __call__(self,scope,receive,send):
         if scope['type']!='http':return await self.app(scope,receive,send)
         values=[v for k,v in scope.get('headers',[]) if k.lower()==b'authorization']
-        allowed=False
+        query=scope.get('query_string',b'')
+        pairs=[];valid_query=True
+        try:
+            if len(query)>8192 or re.search(rb'%(?![0-9A-Fa-f]{2})',query):raise ValueError()
+            pairs=parse_qsl(query.decode('ascii'),keep_blank_values=True,encoding='ascii',errors='strict',max_num_fields=32)
+        except (ValueError,UnicodeError):valid_query=False
+        keys=[v.encode('ascii') for k,v in pairs if k=='API_KEY']
+        # Strip both credential channels BEFORE passing scope to SDK/error handlers.
+        clean=dict(scope)
+        clean['query_string']=urlencode([(k,v) for k,v in pairs if k!='API_KEY']).encode('ascii')
+        clean['headers']=[(k,v) for k,v in scope.get('headers',[]) if k.lower()!=b'authorization']
+        header_ok=False
         if len(values)==1:
             parts=values[0].split(b' ')
-            allowed=len(parts)==2 and parts[0].lower()==b'bearer' and hmac.compare_digest(parts[1],self.expected)
+            header_ok=len(parts)==2 and parts[0].lower()==b'bearer' and hmac.compare_digest(parts[1],self.expected)
+        query_ok=len(keys)==1 and hmac.compare_digest(keys[0],self.expected)
+        # Reject duplicates and mixed conflicting credentials rather than silently choosing one.
+        allowed=valid_query and bool(values or keys) and (not values or header_ok) and (not keys or query_ok)
         if not allowed:
             body=b'{"error":"MCP_BEARER_TOKEN_REQUIRED_OR_INVALID"}'
             await send({'type':'http.response.start','status':401,'headers':[(b'content-type',b'application/json'),(b'cache-control',b'no-store'),(b'www-authenticate',b'Bearer realm="material-review-mcp"')]})
             await send({'type':'http.response.body','body':body});return
-        await self.app(scope,receive,send)
+        async def safe_send(event):
+            if event['type']=='http.response.start':
+                event=dict(event)
+                event['headers']=[(k,v) for k,v in event.get('headers',[]) if k.lower() not in (b'cache-control',b'referrer-policy')]+[(b'cache-control',b'no-store'),(b'referrer-policy',b'no-referrer')]
+            await send(event)
+        await self.app(clean,receive,safe_send)
