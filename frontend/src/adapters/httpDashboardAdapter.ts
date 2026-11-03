@@ -283,6 +283,9 @@ export class HttpDashboardAdapter implements DashboardDataAdapter {
       previousStart: query.previous.start, previousEnd: query.previous.end, limit: String(limit) })
     return validateReviewResponse(await this.get(`/api/projects/${encodeURIComponent(projectId)}/review?${params}`))
   }
+  async fetchStarSummary(projectId: string, query: ReviewQuery) {
+    return validateStarSummary(await this.get(`/api/projects/${encodeURIComponent(projectId)}/star-summary?${starSummaryParams(query)}`), projectId, query)
+  }
   async fetchTop(projectId: string, date: string, limit: number): Promise<TopResult> {
     const params = new URLSearchParams({ date, limit: String(limit) })
     return validateTopResponse(await this.get(`/api/projects/${encodeURIComponent(projectId)}/top?${params}`))
@@ -301,3 +304,23 @@ export class HttpDashboardAdapter implements DashboardDataAdapter {
 }
 
 export const httpDashboardAdapter = new HttpDashboardAdapter()
+
+export function starSummaryParams(query: ReviewQuery) {
+  return new URLSearchParams({ currentStart: query.current.start, currentEnd: query.current.end,
+    previousStart: query.previous.start, previousEnd: query.previous.end })
+}
+
+export function validateStarSummary(raw: unknown, projectId: string, query: ReviewQuery): import('../domain/dashboard').StarSummary {
+  const value = object(raw)
+  const periods = array(value.periods).map(object)
+  requireValue(value.projectId === projectId && periods.length === 2)
+  for (const [index, range] of [query.current, query.previous].entries()) {
+    const period = periods[index]!
+    const dates = object(period.range)
+    requireValue(period.key === (index === 0 ? 'CURRENT' : 'PREVIOUS') && dates.start === range.start && dates.end === range.end)
+    coverage(period.coverage)
+    groups(period.groups)
+  }
+  groups(value.comparisons)
+  return value as unknown as import('../domain/dashboard').StarSummary
+}

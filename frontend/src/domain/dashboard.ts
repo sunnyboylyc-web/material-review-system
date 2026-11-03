@@ -54,6 +54,12 @@ export interface NumericResult {
   partialReasons?: string[]
 }
 export type MetricKey = 'spend' | 'materialCount' | 'ctr' | 'cvr' | 'spendShare' | 'roi' | 'cpm' | 'cpc'
+
+export interface StarSummary {
+  projectId: string
+  periods: ReviewPeriodResult[]
+  comparisons: MetricGroup[]
+}
 export type GroupKey = 'overall' | 'new' | 'historical' | 'aigc'
 export interface MetricGroup {
   key: GroupKey

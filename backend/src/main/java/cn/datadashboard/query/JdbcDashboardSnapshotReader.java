@@ -1,6 +1,7 @@
 package cn.datadashboard.query;
 
 import cn.datadashboard.calculation.DashboardModels;
+import cn.datadashboard.calculation.DashboardCalculator;
 import cn.datadashboard.operations.OperationsStatus;
 import tools.jackson.core.StreamReadFeature;
 import tools.jackson.databind.DeserializationFeature;
@@ -94,6 +95,62 @@ public final class JdbcDashboardSnapshotReader {
             for (String account : accounts) snapshots.add(readSnapshot(connection, account));
             return mergeAccounts(logicalAccount, snapshots);
         });
+    }
+
+    public DashboardCalculator.StarEvidence readPeriods(String logicalAccount, List<String> accounts,
+            DashboardModels.DateRange current, DashboardModels.DateRange previous) {
+        return inReadOnlyTransaction(logicalAccount, connection -> {
+            var snapshots = new ArrayList<DashboardModels.Snapshot>();
+            for (String account : accounts) snapshots.add(readSnapshot(connection, account, null, current, previous));
+            var snapshot = mergeAccounts(logicalAccount, snapshots);
+            return new DashboardCalculator.StarEvidence(snapshot,
+                    readEarlierMaterials(connection, accounts, snapshot, current),
+                    readEarlierMaterials(connection, accounts, snapshot, previous));
+        });
+    }
+
+    private static final String EARLIER_MATERIAL_SQL = """
+            SELECT candidate.material_id
+            FROM JSON_TABLE(?, '$[*]' COLUMNS (material_id VARCHAR(128) PATH '$')) AS candidate
+            WHERE EXISTS (
+                SELECT 1 FROM scsj_fact_day_state s
+                STRAIGHT_JOIN scsj_fact_input_version v ON v.id = s.current_input_version_id
+                    AND v.account_id = s.account_id AND v.stat_date = s.stat_date AND v.disposition = 'CURRENT'
+                STRAIGHT_JOIN scsj_material_day_fact f FORCE INDEX (UK_SCSJ_FACT_VERSION_MATERIAL)
+                    ON f.input_version_id = v.id AND f.material_id = candidate.material_id COLLATE utf8mb4_0900_ai_ci
+                    AND CAST(f.material_id AS BINARY) = CAST(candidate.material_id AS BINARY)
+                    AND f.account_id = s.account_id AND f.stat_date = s.stat_date
+                WHERE s.account_id = ? AND s.stat_date < ?
+            )
+            """;
+
+    /** Classification needs existence of earlier observations, never their spend or raw payload. */
+    private static Set<String> readEarlierMaterials(Connection connection, List<String> accounts,
+            DashboardModels.Snapshot snapshot, DashboardModels.DateRange range) throws SQLException {
+        List<String> candidates = snapshot.facts().stream()
+                .filter(fact -> !fact.date().isBefore(range.start()) && !fact.date().isAfter(range.end()))
+                .filter(fact -> fact.spend() != null && fact.spend().signum() > 0)
+                .filter(DashboardCalculator::includesStarFact)
+                .map(DashboardModels.Fact::materialId).filter(id -> !id.equals("-2")).distinct().toList();
+        if (candidates.isEmpty()) return Set.of();
+        Set<String> earlier = new HashSet<>();
+        try (PreparedStatement query = connection.prepareStatement(EARLIER_MATERIAL_SQL)) {
+            query.setQueryTimeout(60);
+            query.setDate(3, java.sql.Date.valueOf(range.start()));
+            for (String account : accounts) {
+                query.setString(2, account);
+                for (int offset = 0; offset < candidates.size(); offset += 250) {
+                    var batch = candidates.subList(offset, Math.min(candidates.size(), offset + 250)).stream()
+                            .filter(id -> !earlier.contains(id)).toList();
+                    if (batch.isEmpty()) continue;
+                    query.setString(1, CANONICAL_JSON.writeValueAsString(batch));
+                    try (ResultSet rows = query.executeQuery()) {
+                        while (rows.next()) earlier.add(rows.getString(1));
+                    }
+                }
+            }
+        }
+        return Set.copyOf(earlier);
     }
 
     /** Same-day sources are a conflict, never summed or silently selected. */
@@ -354,12 +411,19 @@ public final class JdbcDashboardSnapshotReader {
 
     private static DashboardModels.Snapshot readSnapshot(Connection connection, String accountId,
                                                          LocalDate onlyDay) throws SQLException {
+        return readSnapshot(connection, accountId, onlyDay, null, null);
+    }
+
+    private static DashboardModels.Snapshot readSnapshot(Connection connection, String accountId,
+            LocalDate onlyDay, DashboardModels.DateRange current, DashboardModels.DateRange previous) throws SQLException {
         List<DashboardModels.DayEvidence> days = new ArrayList<>();
         List<DashboardModels.Fact> facts = new ArrayList<>();
         Set<LocalDate> completedDates = new HashSet<>();
         DayBuffer day = null;
         String sql = onlyDay == null ? SNAPSHOT_SQL : SNAPSHOT_SQL.replace("ORDER BY s.stat_date, f.source_row_number",
                 "AND s.stat_date = ?\nORDER BY s.stat_date, f.source_row_number");
+        if (current != null) sql = sql.replace("ORDER BY s.stat_date, f.source_row_number",
+                "AND (s.stat_date BETWEEN ? AND ? OR s.stat_date BETWEEN ? AND ?)\nORDER BY s.stat_date, f.source_row_number");
         try (PreparedStatement query = connection.prepareStatement(sql)) {
             // Connector/J otherwise buffers every raw JSON row before projection. Keep
             // the forward-only result streaming; day hashes and the repeatable-read
@@ -367,6 +431,12 @@ public final class JdbcDashboardSnapshotReader {
             query.setFetchSize(Integer.MIN_VALUE);
             query.setString(1, accountId);
             if (onlyDay != null) query.setDate(2, java.sql.Date.valueOf(onlyDay));
+            if (current != null) {
+                query.setDate(2, java.sql.Date.valueOf(current.start()));
+                query.setDate(3, java.sql.Date.valueOf(current.end()));
+                query.setDate(4, java.sql.Date.valueOf(previous.start()));
+                query.setDate(5, java.sql.Date.valueOf(previous.end()));
+            }
             query.setQueryTimeout(60);
             try (ResultSet rows = query.executeQuery()) {
                 while (rows.next()) {

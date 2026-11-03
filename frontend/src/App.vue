@@ -25,6 +25,7 @@ import SpendCurve from './components/SpendCurve.vue'
 import MaterialScatter from './components/MaterialScatter.vue'
 import { reviewSignal } from './domain/reviewSignal'
 import PeriodReview from './components/PeriodReview.vue'
+import StarProjectSummary from './components/StarProjectSummary.vue'
 import MeetingExport from './components/MeetingExport.vue'
 import DateRangePicker from './components/DateRangePicker.vue'
 import type { ConfigurationAdapter } from './domain/configuration'
@@ -177,6 +178,12 @@ function toggleMaterial(id: string): void {
 }
 const operationsOpened = ref(false)
 const reviewDraft = ref<ReviewQuery>(structuredClone(defaults.review))
+const starSummary = ref<InstanceType<typeof StarProjectSummary>>()
+function openStarSummary(projectId: string, projectName: string) {
+  if (!adapter.fetchStarSummary) return
+  const query = cloneReviewQuery(reviewDraft.value)
+  void starSummary.value?.open(projectName, () => adapter.fetchStarSummary!(projectId, query))
+}
 const committedReview = ref<ReviewQuery>(structuredClone(defaults.review))
 const reviewTopComparisonLimit = ref(20)
 const topDateDraft = ref(defaults.topDate)
@@ -821,8 +828,12 @@ onBeforeUnmount(() => {
           <p v-if="reviewResult" class="module-note">当前结果：本周期 {{ reviewResult.periods.find(p => p.key === 'CURRENT')?.range.start }} — {{ reviewResult.periods.find(p => p.key === 'CURRENT')?.range.end }}；上周期 {{ reviewResult.periods.find(p => p.key === 'PREVIOUS')?.range.start }} — {{ reviewResult.periods.find(p => p.key === 'PREVIOUS')?.range.end }}</p>
           <p v-else-if="!reviewLoading" class="module-note" role="status">点击“刷新数据”查看已入库数据，不会启动采集。</p>
 
+          <div v-if="!reviewResult && adapter.fetchStarSummary" class="pr-section-head"><h4 class="pr-section-title"><small>01</small>项目整体表现</h4><button class="primary-button star-summary-trigger" type="button" @click="openStarSummary(selectedProjectId, selectedProject.name)">示例</button></div>
           <div v-if="!reviewResult" class="analysis-empty" :aria-busy="reviewLoading"><ConstellationGlyph :kind="1"/><p class="overline">PERIOD COMPARISON</p><h4>{{ reviewLoading ? '正在整理周期表现…' : '把两个周期，放在一起看。' }}</h4><p>选择本期与上期日期，点击“刷新数据”。<br>整体表现、素材构成与 TOP 对比将在这里展开。</p><div class="empty-stage-labels"><span>01 整体表现</span><span>02 素材构成</span><span>03 分类对比</span></div></div>
-          <PeriodReview v-if="reviewResult" :key="selectedProjectId" :result="reviewResult" :project-name="selectedProject.name" :load-overall-materials="loadReviewOverallMaterials" :load-all-overall-materials="adapter.fetchReviewMaterials ? loadAllReviewOverallMaterials : undefined" :material-type-selection="materialTypeSelections[selectedProjectId]" :load-material-types="loadMaterialTypes" @material-type-updated="selection => materialTypeSelections[selectedProjectId] = selection" />
+          <PeriodReview v-if="reviewResult" :key="selectedProjectId" :result="reviewResult" :project-name="selectedProject.name" :load-overall-materials="loadReviewOverallMaterials" :load-all-overall-materials="adapter.fetchReviewMaterials ? loadAllReviewOverallMaterials : undefined" :material-type-selection="materialTypeSelections[selectedProjectId]" :load-material-types="loadMaterialTypes" @material-type-updated="selection => materialTypeSelections[selectedProjectId] = selection">
+            <template #summary-action><button v-if="adapter.fetchStarSummary" class="primary-button star-summary-trigger" type="button" @click="openStarSummary(selectedProjectId, selectedProject.name)">示例</button></template>
+          </PeriodReview>
+          <StarProjectSummary :key="selectedProjectId" ref="starSummary" :synthetic="isSynthetic" />
         </section>
 
         <section v-show="activeView === 'dashboard' && activeTab === 'top'" class="panel daily-panel" aria-labelledby="top-title">
@@ -959,6 +970,7 @@ onBeforeUnmount(() => {
   </div>
 </template>
 <style scoped>
+.star-summary-trigger { inline-size: 54px; padding-inline: 0; }
 .download-attention { color: var(--danger, #b42318); line-height: 1.6; margin: 20px 32px 0; }
 .download-dialog .icon-button:disabled { opacity: .5; cursor: not-allowed; }
 .download-reference-actions { display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end; }

@@ -95,7 +95,7 @@ onBeforeUnmount(() => dialog.value?.close?.())
   <div class="period-review-v2">
     <p v-if="result.evidenceKind === 'SYNTHETIC'" class="synthetic-coverage-warning">纯虚构演示数据，不用于业务判断。</p>
     <section data-meeting-section>
-    <div class="meeting-section-heading"><h4 class="pr-section-title"><small>01</small>项目整体表现</h4><MeetingExport title="项目整体表现" :context="meetingContext" :synthetic="result.evidenceKind === 'SYNTHETIC'"/></div>
+    <div class="pr-section-head"><div class="meeting-section-heading"><h4 class="pr-section-title"><small>01</small>项目整体表现</h4><MeetingExport title="项目整体表现" :context="meetingContext" :synthetic="result.evidenceKind === 'SYNTHETIC'"/></div><slot name="summary-action" /></div>
     <div class="pr-kpis">
       <article v-for="item in metrics" :key="item.key" class="pr-kpi">
         <span>{{ item.key === 'spend' ? '总消耗' : item.key === 'roi' ? '整体 ROI' : '素材数量' }}</span>

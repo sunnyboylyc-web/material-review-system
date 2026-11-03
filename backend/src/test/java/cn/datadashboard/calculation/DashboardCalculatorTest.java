@@ -22,6 +22,40 @@ class DashboardCalculatorTest {
             Clock.fixed(Instant.parse("2026-10-13T00:00:00Z"), ZoneOffset.UTC));
 
     @Test
+    void starSummaryUsesBothPeriodsAndIncludesTheCanonicalAigcRowOnce() {
+        Snapshot snapshot = complete(1, 4, List.of(
+                fact(1, "outside", "示例", 1, "100", "100", "100", "10", "1"),
+                fact(2, "video", "示例视频", 1, "20", "40", "100", "10", "1"),
+                fact(2, "-2", "AIGC汇总", null, "5", "10", "100", "10", "1"),
+                fact(3, "video", "示例视频", 1, "10", "30", "100", "10", "1"),
+                fact(3, "-2", "示例 AIGC汇总", null, "5", "0", "100", "10", "1"),
+                fact(3, "normal", "普通AIGC视频", 1, "90", "90", "100", "10", "1")));
+
+        var result = calculator.starSummary(snapshot, "demo", range(3, 3), range(2, 2));
+
+        Period current = result.periods().getFirst();
+        assertThat(current.groups()).extracting(Group::key).containsExactly("overall", "new", "historical", "aigc");
+        assertMetric(current, "overall", "spend", "15");
+        assertMetric(current, "overall", "roi", "2");
+        assertMetric(current, "overall", "materialCount", "2");
+        assertMetric(result.periods().get(1), "overall", "spend", "25");
+        assertMetric(current, "historical", "spend", "10");
+        assertMetric(current, "aigc", "spend", "5");
+        assertThat(result.comparisons().getFirst().metrics().get("spend").value()).isEqualByComparingTo("0.6");
+    }
+
+    @Test
+    void starSummaryClassifiesAnEarlierObservationWithoutAddingItsSpend() {
+        Snapshot bounded = complete(3, 4, List.of(fact(3, "seen-earlier", "示例视频", 3,
+                "20", "40", "100", "10", "1"), fact(3, "new", "示例新素材", 3, "10", "20", "100", "10", "1")));
+        var evidence = new DashboardCalculator.StarEvidence(bounded, java.util.Set.of("seen-earlier"), java.util.Set.of());
+        var current = calculator.starSummary(evidence, "demo", range(3, 3), range(4, 4)).periods().getFirst();
+        assertMetric(current, "overall", "spend", "30");
+        assertMetric(current, "historical", "spend", "20");
+        assertMetric(current, "new", "spend", "10");
+    }
+
+    @Test
     void reviewComputesAllGroupsAndExcludesZzOnlyFromDistinctCount() {
         Snapshot snapshot = complete(1, 4, List.of(
                 fact(1, "A", "normal", 1, "10", "20", "100", "10", "1"),

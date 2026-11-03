@@ -2,6 +2,7 @@
 import App from '../App.vue'
 import { SyntheticMockAdapter } from '../adapters/syntheticMockAdapter'
 import { validateMaterialTypeResponse, validateReviewResponse, validateReviewMaterials } from '../adapters/httpDashboardAdapter'
+import { starSummaryParams, validateStarSummary } from '../adapters/httpDashboardAdapter'
 import type { DashboardDataAdapter } from '../adapters/dashboardAdapter'
 import type { PeriodPreferences } from '../adapters/periodPreferences'
 import type { ProjectModule, ReviewQuery } from '../domain/dashboard'
@@ -12,6 +13,11 @@ const synthetic = new SyntheticMockAdapter([project])
 const adapter: DashboardDataAdapter = {
   evidenceKind:'SYNTHETIC',
   listProjects:() => synthetic.listProjects(),
+  async fetchStarSummary(projectId, query) {
+    const response = await fetch(`http://127.0.0.1:18082/star-summary?${starSummaryParams(query)}`, { signal: AbortSignal.timeout(15000) })
+    if (!response.ok) throw new Error('本地示例项目统计未完成，请检查日期。')
+    return validateStarSummary(await response.json(), projectId, query)
+  },
   fetchTop:(...args) => synthetic.fetchTop(...args),
   async fetchFreshness(projectId) {
     if (projectId !== project.id) throw new Error('合成预览项目不存在')

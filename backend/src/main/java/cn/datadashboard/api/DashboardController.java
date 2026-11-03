@@ -19,7 +19,13 @@ public final class DashboardController {
     private final Function<String, DashboardModels.Snapshot> snapshots;
     private final Function<String, DashboardCalculator.PreparedSnapshot> prepared;
     private final ProjectDirectory directory;
+    private final PeriodReader periodReader;
     private final DashboardCalculator calculator = new DashboardCalculator();
+
+    @FunctionalInterface
+    public interface PeriodReader {
+        DashboardCalculator.StarEvidence read(String account, DashboardModels.DateRange current, DashboardModels.DateRange previous);
+    }
 
     public DashboardController(Supplier<DashboardModels.Snapshot> snapshots) {
         this(ProjectDirectory.single("SYNTHETIC_LEGACY_TEST"), ignored -> snapshots.get());
@@ -30,9 +36,26 @@ public final class DashboardController {
 
     public DashboardController(ProjectDirectory directory, Function<String, DashboardModels.Snapshot> snapshots,
                                Function<String, DashboardCalculator.PreparedSnapshot> prepared) {
+        this(directory, snapshots, prepared, null);
+    }
+
+    public DashboardController(ProjectDirectory directory, Function<String, DashboardModels.Snapshot> snapshots,
+                               Function<String, DashboardCalculator.PreparedSnapshot> prepared, PeriodReader periodReader) {
         this.directory = directory;
         this.snapshots = snapshots;
         this.prepared = prepared;
+        this.periodReader = periodReader;
+    }
+
+    @GetMapping("/projects/{projectId}/star-summary")
+    public DashboardCalculator.ProjectSummary starSummary(@PathVariable String projectId,
+            @RequestParam String currentStart, @RequestParam String currentEnd,
+            @RequestParam String previousStart, @RequestParam String previousEnd) {
+        String account = directory.account(projectId);
+        var current = range(currentStart, currentEnd);
+        var previous = range(previousStart, previousEnd);
+        if (periodReader == null) throw new IllegalStateException("FACT_QUERY_UNAVAILABLE");
+        return calculator.starSummary(periodReader.read(account, current, previous), projectId, current, previous);
     }
 
     @GetMapping("/projects")

@@ -1,6 +1,7 @@
 import type { MaterialTypeQuery, MaterialTypeReview, ProjectModule, ReviewMaterials, ReviewQuery, ReviewResult, TopResult } from '../domain/dashboard'
 
 export interface DashboardDataAdapter {
+  fetchStarSummary?(projectId: string, query: ReviewQuery): Promise<import('../domain/dashboard').StarSummary>
   fetchFreshness(projectId: string): Promise<{schemaVersion: 'freshness-1.0.0'; projectId: string; latestMcpStatDate: string | null}>
   readonly evidenceKind?: 'CURRENT_FACTS' | 'SYNTHETIC'
   listProjects(): Promise<ProjectModule[]>

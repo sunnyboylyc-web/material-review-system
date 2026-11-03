@@ -56,6 +56,34 @@ public final class MaterialTypePreviewMain {
         var prepared = DashboardCalculator.prepare(filterFixture());
         var mapper = JsonMapper.builder().build();
         var server = HttpServer.create(new InetSocketAddress("127.0.0.1",18082),0);
+        server.createContext("/star-summary", exchange -> {
+            byte[] body;
+            int status = 200;
+            try {
+                if (!"GET".equals(exchange.getRequestMethod())) throw new IllegalArgumentException();
+                Map<String, String> parameters = new HashMap<>();
+                for (String pair : exchange.getRequestURI().getRawQuery().split("&")) {
+                    String[] item = pair.split("=", 2);
+                    parameters.put(item[0], URLDecoder.decode(item[1], StandardCharsets.UTF_8));
+                }
+                var current = new DateRange(LocalDate.parse(parameters.get("currentStart")), LocalDate.parse(parameters.get("currentEnd")));
+                var previous = new DateRange(LocalDate.parse(parameters.get("previousStart")), LocalDate.parse(parameters.get("previousEnd")));
+                var sample = prepared.snapshot();
+                var facts = sample.facts().stream().map(fact -> List.of("OLD", "-2", "O1").contains(fact.materialId())
+                        ? new Fact(fact.date(), fact.materialId(), "示例 · " + fact.materialName(), fact.createdDate(),
+                                fact.spend(), fact.gmv(), fact.impressions(), fact.clicks(), fact.orders()) : fact).toList();
+                body = mapper.writeValueAsBytes(calculator.starSummary(new Snapshot(sample.accountId(), sample.days(), facts),
+                        "synthetic-type-preview", current, previous));
+            } catch (Exception failure) {
+                status = 400;
+                body = "{\"error\":\"周期日期无效\"}".getBytes(StandardCharsets.UTF_8);
+            }
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
+            exchange.getResponseHeaders().set("Cache-Control", "no-store");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "http://127.0.0.1:5186");
+            exchange.sendResponseHeaders(status, body.length);
+            try (var out = exchange.getResponseBody()) { out.write(body); }
+        });
         server.createContext("/review", exchange -> {
             byte[] body; int status = 200;
             try {

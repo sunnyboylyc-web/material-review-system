@@ -385,15 +385,65 @@ public final class DashboardCalculator {
                 List.copyOf(rows), index.fingerprint());
     }
 
+    public record ProjectSummary(String projectId, List<Period> periods, List<Group> comparisons) {}
+
+    public record StarEvidence(Snapshot snapshot, Set<String> seenBeforeCurrent, Set<String> seenBeforePrevious) {}
+
+    public static boolean includesStarFact(Fact row) {
+        return "-2".equals(row.materialId()) || row.materialName() != null && row.materialName().contains("示例");
+    }
+
+    public ProjectSummary starSummary(Snapshot snapshot, String projectId, DateRange current, DateRange previous) {
+        return starSummary(new StarEvidence(snapshot, Set.of(), Set.of()), projectId, current, previous);
+    }
+
+    public ProjectSummary starSummary(StarEvidence evidence, String projectId, DateRange current, DateRange previous) {
+        validateProject(projectId);
+        validateRange(current);
+        validateRange(previous);
+        var index = new Index(prepare(evidence.snapshot()));
+        Period now = starPeriod(index, "CURRENT", "本周期", current, evidence.seenBeforeCurrent());
+        Period before = starPeriod(index, "PREVIOUS", "对比期", previous, evidence.seenBeforePrevious());
+        List<Group> comparisons = new ArrayList<>();
+        for (int group = 0; group < now.groups().size(); group++) {
+            Group currentGroup = now.groups().get(group);
+            Group previousGroup = before.groups().get(group);
+            Map<String, Result> metrics = new LinkedHashMap<>();
+            for (String metric : METRIC_KEYS) {
+                Result a = currentGroup.metrics().get(metric);
+                Result b = previousGroup.metrics().get(metric);
+                metrics.put(metric, inherited(MetricArithmetic.comparisonIndex(a.value(), b.value()), a, b));
+            }
+            comparisons.add(new Group(currentGroup.key(), Map.copyOf(metrics)));
+        }
+        return new ProjectSummary(projectId, List.of(now, before), List.copyOf(comparisons));
+    }
+
+    private static Period starPeriod(Index index, String key, String label, DateRange range, Set<String> seenEarlier) {
+        return summarizePeriod(index, key, label, range,
+                index.inRange(range).stream().filter(DashboardCalculator::includesStarFact).toList(), seenEarlier).period;
+    }
+
     private static PeriodCalculation period(Index index, String key, String label, DateRange range) {
+        var rows = index.inRange(range);
+        var summary = summarizePeriod(index, key, label, range, rows, Set.of());
+        var coverage = summary.period.coverage();
+        return new PeriodCalculation(summary.period, summary.overall, materialTotals(rows, coverage.coveredDays() > 0,
+                !coverage.state().equals("COMPLETE")), summary.cohorts);
+    }
+
+    private record PeriodSummary(Period period, Totals overall, Map<String, String> cohorts) {}
+
+    private static PeriodSummary summarizePeriod(Index index, String key, String label, DateRange range,
+            List<Fact> rows, Set<String> seenEarlier) {
         Coverage coverage = index.coverage(range);
-        List<Fact> rows = index.inRange(range);
         Totals overall = new Totals(rows, coverage.coveredDays() > 0, !coverage.state().equals("COMPLETE"));
         Map<String, String> cohorts = new HashMap<>();
         Set<String> pending = new HashSet<>();
         for (Fact row : rows) {
             if (positive(row.spend())) {
-                String cohort = cohorts.computeIfAbsent(row.materialId(), id -> index.cohort(id, range));
+                String cohort = cohorts.computeIfAbsent(row.materialId(), id -> seenEarlier.contains(id) && !id.equals("-2")
+                        ? "historical" : index.cohort(id, range));
                 if (cohort.equals("pending")) {
                     pending.add(row.materialId());
                 }
@@ -412,8 +462,7 @@ public final class DashboardCalculator {
             groups.add(new Group(cohort, Map.copyOf(groupMetrics)));
         }
         Period period = new Period(key, label, range, coverage, List.copyOf(groups), pending.size());
-        return new PeriodCalculation(period, overall, materialTotals(rows, coverage.coveredDays() > 0,
-                !coverage.state().equals("COMPLETE")), cohorts);
+        return new PeriodSummary(period, overall, cohorts);
     }
 
     private static boolean isPartial(PeriodCalculation calculation) {

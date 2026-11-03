@@ -17,6 +17,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.List;
 
 /** Local-only fact reads; configuration writes require an additional explicit launch option. */
 public final class LocalDashboardMain {
@@ -67,8 +68,10 @@ public final class LocalDashboardMain {
                     : new ProjectDirectory(() -> store.snapshot().document().projects().stream()
                     .map(p -> new ProjectDirectory.Binding(p.id(), p.name(), store.lineage(p.id()).logicalAccount(), p.enabled() && !p.deleted(), p.category())).toList());
             var cumulative = store == null ? null : new cn.datadashboard.query.DouyinDashboardReader(store, reader, layered);
-            var controller = cumulative == null ? new DashboardController(directory, layered::read, layered::readPrepared)
-                    : new DashboardController(directory, cumulative::read, cumulative::readPrepared);
+            DashboardController.PeriodReader periods = (account, current, previous) -> reader.readPeriods(account,
+                    cumulative == null ? List.of(account) : cumulative.accounts(account), current, previous);
+            var controller = cumulative == null ? new DashboardController(directory, layered::read, layered::readPrepared, periods)
+                    : new DashboardController(directory, cumulative::read, cumulative::readPrepared, periods);
             // This wrapper always calls the strict reader and quarantines a known-bad derived account.
             var operations = new OperationsController(directory, cumulative == null ? layered::inspect : cumulative::inspect);
             var operationsFiles = trialCloud ? new cn.datadashboard.files.OperationsFileStore(workspace.resolve(".local/operations-files")) : null;

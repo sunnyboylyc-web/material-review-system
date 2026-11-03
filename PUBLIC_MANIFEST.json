@@ -53,8 +53,8 @@
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/api/DashboardController.java",
-      "bytes": 9070,
-      "sha256": "4b6b43d61dd0490ee1fc7a874dae56a0ce344b630b4213fe7e1c6347a34ac473"
+      "bytes": 10348,
+      "sha256": "56925e56041e8596f1c5aa6e9fa2c9abb147fb71c576c4b182d0a86aad1b3043"
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/api/DatabaseBackupController.java",
@@ -93,8 +93,8 @@
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/calculation/DashboardCalculator.java",
-      "bytes": 58078,
-      "sha256": "36f6268510ae6a16a7b1debbf8681a8c87d1630529e1132154792d3ef374f3c6"
+      "bytes": 60862,
+      "sha256": "a4c76e30bb454b6a343837a83db9976dd98f7f4babac0acb8392fb229defde80"
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/calculation/DashboardModels.java",
@@ -333,8 +333,8 @@
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/local/LocalDashboardMain.java",
-      "bytes": 13188,
-      "sha256": "b8830ea6ce51ed8fbe505da0cf4f9adf7e546d2b2ba08167fcc496c351eb67f9"
+      "bytes": 13454,
+      "sha256": "c855aaf5e31f65c0d611053b0f11c7031b8297600ac07da50f0edfa56f661830"
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/local/LocalDevelopmentBootstrap.java",
@@ -413,8 +413,8 @@
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/query/JdbcDashboardSnapshotReader.java",
-      "bytes": 32200,
-      "sha256": "7f2bd21a6d46c4b1e663f47cffd0dc3f4fa68924f89fb5c93bae35aa7fa466c2"
+      "bytes": 36613,
+      "sha256": "0c5b2bc47bc8cb646ec3849a5e4e9a9d89d7eda95a13e13bc7db782f8acbd326"
     },
     {
       "path": "backend/src/main/java/cn/datadashboard/query/LayeredDashboardReader.java",
@@ -593,8 +593,8 @@
     },
     {
       "path": "backend/src/test/java/cn/datadashboard/calculation/DashboardCalculatorTest.java",
-      "bytes": 44070,
-      "sha256": "4d0502751ba96d7065ecea90648db0a7e50e8d219e5a088470d21a09b138bef2"
+      "bytes": 46159,
+      "sha256": "b1e04ff1419474fe8cd148e0e639f8984fc453ddccb2ac6f2aff2cebd451de28"
     },
     {
       "path": "backend/src/test/java/cn/datadashboard/calculation/MaterialTypeAnalysisTest.java",
@@ -603,8 +603,8 @@
     },
     {
       "path": "backend/src/test/java/cn/datadashboard/calculation/MaterialTypePreviewMain.java",
-      "bytes": 9746,
-      "sha256": "5ebf9f7fd95902431358c816a6616f5bf67eb9a53a37aca8d312f2bfed517193"
+      "bytes": 11815,
+      "sha256": "d91449abf8f654b52271c69765f8defb18e6ccf12c42db10921704e61fea3f90"
     },
     {
       "path": "backend/src/test/java/cn/datadashboard/calculation/MaterialTypeReviewTest.java",
@@ -1103,8 +1103,8 @@
     },
     {
       "path": "frontend/src/App.vue",
-      "bytes": 67424,
-      "sha256": "88fe6a71841633591c16ab754e7fc9e30c0ae9c4e848e8a780d0a3ab7a0490f8"
+      "bytes": 68545,
+      "sha256": "6a9942fa2d0cf7466caa3f0dab1475d096ac7d442d3f34afe469bf649d511597"
     },
     {
       "path": "frontend/src/adapters/adminAccounts.ts",
@@ -1113,8 +1113,8 @@
     },
     {
       "path": "frontend/src/adapters/dashboardAdapter.ts",
-      "bytes": 889,
-      "sha256": "287b5ce03566812b755d20d5c1befb574f609d4d44cf11ee613e453d6caee20a"
+      "bytes": 1000,
+      "sha256": "0edbb1204900fe9c4cb9697927c24a90727c42c2e59c1d39175e383513eb8442"
     },
     {
       "path": "frontend/src/adapters/httpCollectedExportAdapter.ts",
@@ -1133,8 +1133,8 @@
     },
     {
       "path": "frontend/src/adapters/httpDashboardAdapter.ts",
-      "bytes": 19473,
-      "sha256": "8a3415b31d0eda9459b2058db2984e6d34800c5640d42b5a5bfcc207bb3f14c8"
+      "bytes": 20656,
+      "sha256": "1bfd8c36a00dc5665c47452f98a703ec61aa89853a1fd6654433569249315d4f"
     },
     {
       "path": "frontend/src/adapters/httpDatabaseBackupAdapter.ts",
@@ -1323,8 +1323,8 @@
     },
     {
       "path": "frontend/src/components/PeriodReview.vue",
-      "bytes": 21612,
-      "sha256": "9b0eac2d9c3db845af2cad1c68593cdbed9e7f89752c6d7a08f874f3eb629fc8"
+      "bytes": 21677,
+      "sha256": "bf5e9b4a745ed6616227793ef4f2965e050f56d5269396965380805d02bbc3ff"
     },
     {
       "path": "frontend/src/components/ReturnToTop.vue",
@@ -1340,6 +1340,11 @@
       "path": "frontend/src/components/SpendCurve.vue",
       "bytes": 2430,
       "sha256": "d04fb59913200f9d3509b4d47386aef871ed140a6f18940671b716cf21a3164c"
+    },
+    {
+      "path": "frontend/src/components/StarProjectSummary.vue",
+      "bytes": 6181,
+      "sha256": "9b434f210ea13f5cbb562b3ed60ab9219f7f344927212a9a85f4a000627e73ff"
     },
     {
       "path": "frontend/src/components/StarScene.vue",
@@ -1398,8 +1403,8 @@
     },
     {
       "path": "frontend/src/domain/dashboard.ts",
-      "bytes": 5888,
-      "sha256": "594e2c7c8a5d037ccece0e58085b51a2552410a71cabad4fe37b3656c663674e"
+      "bytes": 6003,
+      "sha256": "fab6747662fe528472733d9ba87bb3a474b51e37ce08311572fa5dcf0d784c40"
     },
     {
       "path": "frontend/src/domain/formatting.ts",
@@ -1478,8 +1483,8 @@
     },
     {
       "path": "frontend/src/preview/MaterialTypesPreview.vue",
-      "bytes": 4021,
-      "sha256": "6c20adcf2982024b8cd1778ff33171031a23bea01e43b17cdcbdc1f0465b77c4"
+      "bytes": 4469,
+      "sha256": "d2271624ae71cf29094e63e4fa8e538fc05972e345ccafb50fc84c69d206af42"
     },
     {
       "path": "frontend/src/preview/MeetingDesignPreview.vue",
